@@ -307,7 +307,7 @@ const formatCurrency = (value) => {
 onMounted(() => {
   if (route.params.id) {
     isEdit.value = true
-    // Fetch enrollment data
+    // Fetch enrollments data
   }
 })
 </script>

@@ -26,9 +26,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import Navbar from './Navbar.vue'
-import Sidebar from './Sidebar.vue'
-import Footer from './Footer.vue'
+import Navbar from '../components/Narbar.vue'
+import Sidebar from '../components/SideBar.vue'
+import Footer from '../components/Footer.vue'
 
 const isCollapsed = ref(false)
 

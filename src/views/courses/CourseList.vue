@@ -4,7 +4,6 @@
       <div class="header-content">
         <div class="header-left">
           <h2 class="page-title">Quản lý khóa học</h2>
-          <el-tag type="info">Tổng: {{ total }} khóa học</el-tag>
         </div>
         <div class="header-right">
           <el-button type="success" :icon="Download" @click="handleExport">

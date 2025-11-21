@@ -41,21 +41,6 @@
         <el-icon><Tickets /></el-icon>
         <template #title>Đăng ký học</template>
       </el-menu-item>
-
-      <el-sub-menu index="reports">
-        <template #title>
-          <el-icon><DataAnalysis /></el-icon>
-          <span>Báo cáo</span>
-        </template>
-        <el-menu-item index="/reports/students">Báo cáo học viên</el-menu-item>
-        <el-menu-item index="/reports/courses">Báo cáo khóa học</el-menu-item>
-        <el-menu-item index="/reports/revenue">Báo cáo doanh thu</el-menu-item>
-      </el-sub-menu>
-
-      <el-menu-item index="/settings">
-        <el-icon><Setting /></el-icon>
-        <template #title>Cài đặt</template>
-      </el-menu-item>
     </el-menu>
   </div>
 </template>

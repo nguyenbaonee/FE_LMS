@@ -27,14 +27,6 @@
           clearable
       />
 
-      <!-- Notifications -->
-      <el-badge :value="notificationCount" :hidden="notificationCount === 0">
-        <el-button circle @click="showNotifications">
-          <el-icon><Bell /></el-icon>
-        </el-button>
-      </el-badge>
-
-      <!-- User Menu -->
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-info">
           <el-avatar :src="userAvatar" :size="36">Admin</el-avatar>
@@ -46,14 +38,6 @@
             <el-dropdown-item command="profile">
               <el-icon><User /></el-icon>
               Thông tin cá nhân
-            </el-dropdown-item>
-            <el-dropdown-item command="settings">
-              <el-icon><Setting /></el-icon>
-              Cài đặt
-            </el-dropdown-item>
-            <el-dropdown-item divided command="logout">
-              <el-icon><SwitchButton /></el-icon>
-              Đăng xuất
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>

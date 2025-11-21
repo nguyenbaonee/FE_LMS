@@ -4,7 +4,6 @@
       <div class="header-content">
         <div class="header-left">
           <h2 class="page-title">Quản lý đăng ký học</h2>
-          <el-tag type="info">Tổng: {{ total }} đăng ký</el-tag>
         </div>
         <div class="header-right">
           <el-button type="primary" :icon="Plus" @click="handleCreate">

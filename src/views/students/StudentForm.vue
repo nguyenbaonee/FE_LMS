@@ -12,54 +12,50 @@
           ref="formRef"
           :model="formData"
           :rules="rules"
-          label-width="140px"
+          label-width="180px"
           label-position="left"
       >
-        <!-- Avatar Upload -->
-        <el-form-item label="Avatar" prop="avatar">
-          <el-upload
-              class="avatar-uploader"
-              :show-file-list="false"
-              :before-upload="beforeAvatarUpload"
-              :http-request="handleUploadAvatar"
-          >
-            <el-avatar v-if="formData.avatar" :src="formData.avatar" :size="120" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-          <div class="upload-tip">
-            Cho phép: JPG, PNG. Tối đa 2MB
+        <!-- Multiple Avatar Upload - Unlimited -->
+        <el-form-item label="Avatar" prop="avatars">
+          <div class="avatar-upload-container">
+            <el-upload
+                v-model:file-list="fileList"
+                list-type="picture-card"
+                :auto-upload="false"
+                :on-change="handleAvatarChange"
+                :on-remove="handleRemove"
+                :before-upload="beforeAvatarUpload"
+                accept="image/jpeg,image/png,image/jpg"
+            >
+              <el-icon class="avatar-uploader-icon">
+                <Plus />
+              </el-icon>
+              <template #tip>
+                <div class="upload-tip">
+                  Cho phép: JPG, PNG. Tối đa 2MB/ảnh
+                </div>
+              </template>
+            </el-upload>
           </div>
         </el-form-item>
 
         <el-form-item label="Họ tên" prop="name" required>
-          <el-input v-model="formData.name" placeholder="Nhập họ tên" />
-        </el-form-item>
-
-        <el-form-item label="Email" prop="email" required>
-          <el-input v-model="formData.email" placeholder="Nhập email" />
-        </el-form-item>
-
-        <el-form-item label="Số điện thoại" prop="phone" required>
-          <el-input v-model="formData.phone" placeholder="Nhập số điện thoại" />
-        </el-form-item>
-
-        <el-form-item label="Ngày sinh" prop="birthDate">
-          <el-date-picker
-              v-model="formData.birthDate"
-              type="date"
-              placeholder="Chọn ngày sinh"
-              format="DD/MM/YYYY"
-              value-format="YYYY-MM-DD"
-              style="width: 100%"
+          <el-input
+              v-model="formData.name"
+              placeholder="Nhập họ tên (5-20 ký tự)"
+              maxlength="20"
+              show-word-limit
+              clearable
           />
         </el-form-item>
 
-        <el-form-item label="Địa chỉ" prop="address">
+        <el-form-item label="Email" prop="email" required>
           <el-input
-              v-model="formData.address"
-              type="textarea"
-              :rows="3"
-              placeholder="Nhập địa chỉ"
+              v-model="formData.email"
+              placeholder="Nhập email (5-100 ký tự)"
+              maxlength="100"
+              show-word-limit
+              clearable
           />
         </el-form-item>
 
@@ -67,6 +63,7 @@
           <el-button type="primary" :loading="submitting" @click="handleSubmit">
             {{ isEdit ? 'Cập nhật' : 'Thêm mới' }}
           </el-button>
+          <el-button @click="handleReset">Làm mới</el-button>
           <el-button @click="handleBack">Hủy</el-button>
         </el-form-item>
       </el-form>
@@ -79,10 +76,12 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Back } from '@element-plus/icons-vue'
+import axios from '../../api/axios.js'
 
 const router = useRouter()
 const route = useRoute()
 const formRef = ref()
+const fileList = ref([])
 
 const isEdit = ref(false)
 const submitting = ref(false)
@@ -90,53 +89,50 @@ const submitting = ref(false)
 const formData = reactive({
   name: '',
   email: '',
-  phone: '',
-  birthDate: '',
-  address: '',
-  avatar: ''
+  avatars: []
 })
 
-const rules = {
-  name: [
-    { required: true, message: 'Vui lòng nhập họ tên', trigger: 'blur' },
-    { min: 2, max: 100, message: 'Độ dài từ 2-100 ký tự', trigger: 'blur' }
-  ],
-  email: [
-    { required: true, message: 'Vui lòng nhập email', trigger: 'blur' },
-    { type: 'email', message: 'Email không hợp lệ', trigger: 'blur' }
-  ],
-  phone: [
-    { required: true, message: 'Vui lòng nhập số điện thoại', trigger: 'blur' },
-    { pattern: /^0[0-9]{9}$/, message: 'Số điện thoại không hợp lệ', trigger: 'blur' }
-  ]
-}
-
-const fetchData = async () => {
-  if (!route.params.id) return
-
-  try {
-    // TODO: Call API get student detail
-    // const response = await studentAPI.getById(route.params.id)
-
-    // Mock data
-    Object.assign(formData, {
-      name: 'Nguyễn Văn A',
-      email: 'nguyenvana@email.com',
-      phone: '0901234567',
-      birthDate: '2000-01-15',
-      address: 'Hà Nội',
-      avatar: 'https://i.pravatar.cc/150?img=1'
-    })
-  } catch (error) {
-    ElMessage.error('Lỗi tải dữ liệu')
+const validateName = (rule, value, callback) => {
+  if (!value || value.trim() === '') {
+    callback(new Error('Họ tên không được để trống'))
+  } else if (value.length < 5) {
+    callback(new Error('Họ tên phải có ít nhất 5 ký tự'))
+  } else if (value.length > 20) {
+    callback(new Error('Họ tên không được vượt quá 20 ký tự'))
+  } else {
+    callback()
   }
 }
 
+const validateEmail = (rule, value, callback) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  if (!value || value.trim() === '') {
+    callback(new Error('Email không được để trống'))
+  } else if (!emailRegex.test(value)) {
+    callback(new Error('Email không hợp lệ'))
+  } else if (value.length < 5) {
+    callback(new Error('Email phải có ít nhất 5 ký tự'))
+  } else if (value.length > 100) {
+    callback(new Error('Email không được vượt quá 100 ký tự'))
+  } else {
+    callback()
+  }
+}
+
+const rules = {
+  name: [
+    { required: true, validator: validateName, trigger: 'blur' }
+  ],
+  email: [
+    { required: true, validator: validateEmail, trigger: 'blur' }
+  ]
+}
 const beforeAvatarUpload = (file) => {
-  const isJPG = file.type === 'image/jpeg' || file.type === 'image/png'
+  const isImage = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg'
   const isLt2M = file.size / 1024 / 1024 < 2
 
-  if (!isJPG) {
+  if (!isImage) {
     ElMessage.error('Avatar phải là file JPG/PNG!')
     return false
   }
@@ -147,54 +143,84 @@ const beforeAvatarUpload = (file) => {
   return true
 }
 
-const handleUploadAvatar = async (options) => {
-  const { file } = options
-
-  try {
-    // TODO: Upload to server
-    // const formData = new FormData()
-    // formData.append('file', file)
-    // const response = await uploadAPI.upload(formData)
-    // formData.avatar = response.data.url
-
-    // Mock: Convert to base64 for demo
+const handleAvatarChange = (file, uploadFiles) => {
+  // Validate file before adding
+  if (beforeAvatarUpload(file.raw)) {
+    // Convert to base64 for preview
     const reader = new FileReader()
     reader.onload = (e) => {
-      formData.avatar = e.target.result
+      file.url = e.target.result
+      // Update formData.avatars
+      formData.avatars = uploadFiles.map(f => f.url || f.raw)
     }
-    reader.readAsDataURL(file)
-
-    ElMessage.success('Upload avatar thành công')
-  } catch (error) {
-    ElMessage.error('Lỗi upload avatar')
+    reader.readAsDataURL(file.raw)
   }
+}
+
+const handleRemove = (file, uploadFiles) => {
+  formData.avatars = uploadFiles.map(f => f.url || f.raw)
+  ElMessage.success('Đã xóa avatar')
 }
 
 const handleSubmit = async () => {
   if (!formRef.value) return
 
   await formRef.value.validate(async (valid) => {
-    if (!valid) return
+    if (!valid) {
+      ElMessage.error('Vui lòng kiểm tra lại thông tin')
+      return
+    }
+
+    if (fileList.value.length === 0) {
+      ElMessage.warning('Vui lòng upload ít nhất 1 avatar')
+      return
+    }
 
     submitting.value = true
+
     try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('name', formData.name.trim())
+      formDataToSend.append('email', formData.email.trim())
+
+      // Append file nếu tồn tại raw
+      fileList.value.forEach(file => {
+        if (file.raw) formDataToSend.append('images', file.raw)
+      })
+
+      let response
       if (isEdit.value) {
-        // TODO: Call API update
-        // await studentAPI.update(route.params.id, formData)
+        // Update
+        response = await axios.put(`/students/${route.params.id}`, formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
         ElMessage.success('Cập nhật học viên thành công')
       } else {
-        // TODO: Call API create
-        // await studentAPI.create(formData)
+        // Create
+        response = await axios.post('/students', formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
         ElMessage.success('Thêm học viên thành công')
       }
 
+      console.log('Student response:', response.data)
+      localStorage.setItem('lastCreatedStudent', JSON.stringify(response.data))
       router.push('/students')
+
     } catch (error) {
-      ElMessage.error('Có lỗi xảy ra')
+      console.error('Submit error:', error)
+      ElMessage.error('Có lỗi xảy ra khi tạo/cập nhật học viên')
     } finally {
       submitting.value = false
     }
   })
+}
+
+const handleReset = () => {
+  formRef.value?.resetFields()
+  fileList.value = []
+  formData.avatars = []
+  ElMessage.info('Đã làm mới form')
 }
 
 const handleBack = () => {
@@ -211,7 +237,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .page-container {
-  max-width: 800px;
+  max-width: 900px;
 
   .card-header {
     display: flex;
@@ -224,13 +250,25 @@ onMounted(() => {
     }
   }
 
-  .avatar-uploader {
-    :deep(.el-upload) {
-      border: 1px dashed var(--el-border-color);
+  .avatar-upload-container {
+    width: 100%;
+
+    :deep(.el-upload-list--picture-card) {
+      .el-upload-list__item {
+        width: 120px;
+        height: 120px;
+      }
+    }
+
+    :deep(.el-upload--picture-card) {
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--el-border-color);
       border-radius: 6px;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
       transition: var(--el-transition-duration-fast);
 
       &:hover {
@@ -241,19 +279,22 @@ onMounted(() => {
     .avatar-uploader-icon {
       font-size: 28px;
       color: #8c939d;
-      width: 120px;
-      height: 120px;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    }
+
+    .upload-tip {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--el-text-color-secondary);
+      line-height: 1.5;
     }
   }
 
-  .upload-tip {
-    margin-top: 8px;
+  :deep(.el-form-item__error) {
     font-size: 12px;
-    color: var(--el-text-color-secondary);
+  }
+
+  :deep(.el-input__count) {
+    font-size: 12px;
   }
 }
 </style>

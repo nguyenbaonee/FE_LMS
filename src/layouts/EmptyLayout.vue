@@ -1,6 +1,4 @@
-<!-- ============================================ -->
-<!-- 5. EmptyLayout.vue - Layout trống (Login, Register) -->
-<!-- ============================================ -->
+
 <template>
   <div class="empty-layout">
     <router-view v-slot="{ Component }">

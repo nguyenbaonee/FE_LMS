@@ -21,18 +21,34 @@
     <!-- Search & Filter -->
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="searchForm">
-        <el-form-item label="Tìm kiếm">
+
+        <!-- Name input -->
+        <el-form-item label="Tên">
           <el-input
-              v-model="searchForm.keyword"
-              placeholder="Tên, email, số điện thoại..."
+              v-model="searchForm.name"
+              placeholder="Nhập tên"
               :prefix-icon="Search"
               clearable
-              style="width: 300px"
+              style="width: 200px"
               @clear="handleSearch"
               @keyup.enter="handleSearch"
           />
         </el-form-item>
 
+        <!-- Email input -->
+        <el-form-item label="Email">
+          <el-input
+              v-model="searchForm.email"
+              placeholder="Nhập email"
+              :prefix-icon="Search"
+              clearable
+              style="width: 200px"
+              @clear="handleSearch"
+              @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+
+        <!-- Status select -->
         <el-form-item label="Trạng thái">
           <el-select
               v-model="searchForm.status"
@@ -45,14 +61,17 @@
           </el-select>
         </el-form-item>
 
+        <!-- Buttons -->
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="handleSearch">
             Tìm kiếm
           </el-button>
           <el-button :icon="Refresh" @click="handleReset">Reset</el-button>
         </el-form-item>
+
       </el-form>
     </el-card>
+
 
     <!-- Table -->
     <el-card shadow="never">
@@ -66,9 +85,13 @@
 
         <el-table-column label="Avatar" width="80" align="center">
           <template #default="{ row }">
-            <el-avatar :src="row.avatar" :size="50">
+            <el-avatar
+                :src="'http://localhost:8080' + (row.avatar?.find(a => a.primary)?.url || '')"
+                :size="50"
+            >
               {{ row.name.charAt(0) }}
             </el-avatar>
+
           </template>
         </el-table-column>
 
@@ -76,18 +99,10 @@
 
         <el-table-column prop="email" label="Email" min-width="180" />
 
-        <el-table-column prop="phone" label="Số điện thoại" width="130" />
-
-        <el-table-column label="Ngày sinh" width="120">
-          <template #default="{ row }">
-            {{ formatDate(row.birthDate) }}
-          </template>
-        </el-table-column>
-
         <el-table-column label="Trạng thái" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? 'Hoạt động' : 'Đã xóa' }}
+            <el-tag :type="(row.status === 1 || row.status === 'ACTIVE') ? 'success' : 'danger'">
+              {{ (row.status === 1||row.status === "ACTIVE") ? 'Hoạt động' : 'Đã xóa' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -113,7 +128,7 @@
               Sửa
             </el-button>
             <el-button
-                v-if="row.status === 1"
+                v-if="row.status === 'ACTIVE'"
                 type="danger"
                 size="small"
                 :icon="Delete"
@@ -131,21 +146,24 @@
         <el-pagination
             v-model:current-page="pagination.page"
             v-model:page-size="pagination.pageSize"
-            :page-sizes="[10, 20, 50, 100]"
             :total="total"
+            :page-sizes="[5, 10, 20]"
             layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSearch"
-            @current-change="handleSearch"
-        />
+            @current-change="fetchData"
+            @size-change="fetchData"
+        >
+        </el-pagination>
+
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {useStudentStore} from "../../stores/studentStore.js";
 import {
   Plus,
   Search,
@@ -159,70 +177,35 @@ import * as XLSX from 'xlsx'
 
 const router = useRouter()
 
-// State
-const loading = ref(false)
-const tableData = ref([])
-const total = ref(0)
+const studentStore = useStudentStore()
 
 const searchForm = reactive({
-  keyword: '',
-  status: null
-})
+  name: null,
+  email: null,
+  status: "ACTIVE"
+});
 
 const pagination = reactive({
   page: 1,
   pageSize: 10
 })
 
-// Mock data - thay bằng API call thực tế
-const mockData = [
-  {
-    id: 1,
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@email.com',
-    phone: '0901234567',
-    birthDate: '2000-01-15',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    status: 1
-  },
-  {
-    id: 2,
-    name: 'Trần Thị B',
-    email: 'tranthib@email.com',
-    phone: '0912345678',
-    birthDate: '1999-05-20',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    status: 1
-  },
-  {
-    id: 3,
-    name: 'Lê Văn C',
-    email: 'levanc@email.com',
-    phone: '0923456789',
-    birthDate: '2001-08-10',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    status: 0
-  }
-]
+const tableData = computed(() => studentStore.students)
+const loading = computed(() => studentStore.loading)
+const total = computed(() => studentStore.total)
 
-// Methods
-const fetchData = async () => {
-  loading.value = true
-  try {
-    // TODO: Call API
-    // const response = await studentAPI.getList(searchForm, pagination)
 
-    // Mock delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    tableData.value = mockData
-    total.value = mockData.length
-  } catch (error) {
-    ElMessage.error('Lỗi tải dữ liệu')
-  } finally {
-    loading.value = false
-  }
+const fetchData = () => {
+  const statusStr = searchForm.status === 1 ? 'ACTIVE' : searchForm.status === 0 ? 'DELETED' : 'ACTIVE'
+  studentStore.fetchStudents({
+    name: searchForm.name,
+    email: searchForm.email,
+    status: statusStr,
+    page: pagination.page,
+    pageSize: pagination.pageSize
+  })
 }
+
 
 const handleSearch = () => {
   pagination.page = 1
@@ -230,9 +213,10 @@ const handleSearch = () => {
 }
 
 const handleReset = () => {
-  searchForm.keyword = ''
-  searchForm.status = null
-  handleSearch()
+  searchForm.name = '';
+  searchForm.email = '';
+  searchForm.status = null;
+  handleSearch();
 }
 
 const handleCreate = () => {
@@ -258,9 +242,7 @@ const handleDelete = async (row) => {
           type: 'warning'
         }
     )
-
-    // TODO: Call API delete
-    // await studentAPI.delete(row.id)
+    studentStore.deleteStudent(row.id)
 
     ElMessage.success('Xóa học viên thành công')
     fetchData()
@@ -276,10 +258,10 @@ const handleExport = () => {
     const exportData = tableData.value.map((item, index) => ({
       'STT': index + 1,
       'Họ tên': item.name,
+
+
       'Email': item.email,
-      'Số điện thoại': item.phone,
-      'Ngày sinh': formatDate(item.birthDate),
-      'Trạng thái': item.status === 1 ? 'Hoạt động' : 'Đã xóa'
+      'Trạng thái': (item.status === 1 || item.status === "ACTIVE") ? 'Hoạt động' : 'Đã xóa'
     }))
 
     const ws = XLSX.utils.json_to_sheet(exportData)
@@ -291,11 +273,6 @@ const handleExport = () => {
   } catch (error) {
     ElMessage.error('Lỗi xuất Excel')
   }
-}
-
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('vi-VN')
 }
 
 onMounted(() => {

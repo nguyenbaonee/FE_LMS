@@ -1,35 +1,8 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayouts.vue'
-import EmptyLayout from '../layouts/EmptyLayout.vue'
 
 const routes = [
-    // ===============================
-    // AUTH ROUTES
-    // ===============================
-    // {
-    //     path: '/auth',
-    //     component: EmptyLayout,
-    //     redirect: '/auth/login',
-    //     children: [
-    //         {
-    //             path: 'login',
-    //             name: 'Login',
-    //             component: () => import('@/views/auth/Login.vue'),
-    //             meta: { title: 'Đăng nhập', requiresAuth: false }
-    //         },
-    //         {
-    //             path: 'register',
-    //             name: 'Register',
-    //             component: () => import('@/views/auth/Register.vue'),
-    //             meta: { title: 'Đăng ký', requiresAuth: false }
-    //         }
-    //     ]
-    // },
 
-    // ===============================
-    // MAIN APP ROUTES
-    // ===============================
     {
         path: '/',
         component: MainLayout,
@@ -44,7 +17,6 @@ const routes = [
                 meta: { title: 'Dashboard', icon: 'Odometer' }
             },
 
-            // Students
             {
                 path: 'students',
                 name: 'Students',
@@ -72,7 +44,6 @@ const routes = [
                 props: true
             },
 
-            // Courses
             {
                 path: 'courses',
                 name: 'Courses',
@@ -100,7 +71,6 @@ const routes = [
                 props: true
             },
 
-            // Lessons
             {
                 path: 'lessons',
                 name: 'Lessons',
@@ -144,9 +114,6 @@ const routes = [
         ]
     },
 
-    // ===============================
-    // 404 NOT FOUND
-    // ===============================
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
@@ -154,33 +121,8 @@ const routes = [
         meta: { title: '404 - Không tìm thấy trang' }
     }
 ]
-
-// ===============================
-// CREATE ROUTER
-// ===============================
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes
 })
-
-// ===============================
-// NAVIGATION GUARD
-// ===============================
-// router.beforeEach((to, from, next) => {
-//     // Set page title
-//     document.title = to.meta.title ? `${to.meta.title} - LMS Mini` : 'LMS Mini'
-//
-//     // Check authentication
-//     const isAuthenticated = localStorage.getItem('token') // hoặc dùng store
-//     const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-//
-//     if (requiresAuth && !isAuthenticated) {
-//         next('/auth/login')
-//     } else if (to.path.startsWith('/auth') && isAuthenticated) {
-//         next('/dashboard')
-//     } else {
-//         next()
-//     }
-// })
-
 export default router

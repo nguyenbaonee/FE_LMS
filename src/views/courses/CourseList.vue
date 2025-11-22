@@ -17,40 +17,45 @@
     </el-card>
 
     <el-card shadow="never" class="filter-card">
-      <el-form :inline="true" :model="searchForm">
-        <el-form-item label="Tìm kiếm">
+      <el-form :inline="true" :model="searchForm" class="filter-form">
+        <!-- Ô 1: Name -->
+        <el-form-item label="Tên khóa học">
           <el-input
-              v-model="searchForm.keyword"
-              placeholder="Tên khóa học, mô tả..."
-              :prefix-icon="Search"
+              v-model="searchForm.name"
+              placeholder="Nhập tên khóa học"
               clearable
-              style="width: 300px"
+              style="width: 200px"
           />
         </el-form-item>
 
-        <el-form-item label="Danh mục">
-          <el-select v-model="searchForm.category" placeholder="Tất cả" clearable>
-            <el-option label="Lập trình Web" value="web" />
-            <el-option label="Mobile" value="mobile" />
-            <el-option label="Thiết kế" value="design" />
-          </el-select>
+        <!-- Ô 2: Code -->
+        <el-form-item label="Mã khóa học">
+          <el-input
+              v-model="searchForm.code"
+              placeholder="Nhập mã khóa học"
+              clearable
+              style="width: 150px"
+          />
         </el-form-item>
-
         <el-form-item label="Trạng thái">
-          <el-select v-model="searchForm.status" placeholder="Tất cả" clearable>
-            <el-option label="Đang hoạt động" :value="1" />
-            <el-option label="Đã xóa" :value="0" />
+          <el-select v-model="searchForm.status" placeholder="Đang hoạt động" clearable style="width: 150px">
+            <el-option label="Đang hoạt động" value="ACTIVE" />
+            <el-option label="Đã xóa" value="DELETED" />
           </el-select>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">
-            Tìm kiếm
-          </el-button>
+          <el-button type="primary" :icon="Search" @click="handleSearch">Tìm kiếm</el-button>
+        </el-form-item>
+
+        <!-- Ô 5: Reset -->
+        <el-form-item>
           <el-button :icon="Refresh" @click="handleReset">Reset</el-button>
         </el-form-item>
       </el-form>
     </el-card>
+
+
 
     <el-card shadow="never">
       <el-table v-loading="loading" :data="tableData" stripe>
@@ -69,9 +74,9 @@
 
         <el-table-column prop="name" label="Tên khóa học" min-width="200" />
 
-        <el-table-column label="Giá" width="120" align="right">
+        <el-table-column label="Mã khóa học" width="120" align="right">
           <template #default="{ row }">
-            {{ formatCurrency(row.price) }}
+            {{ row.code }}
           </template>
         </el-table-column>
 
@@ -91,8 +96,8 @@
 
         <el-table-column label="Trạng thái" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? 'Hoạt động' : 'Đã xóa' }}
+            <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'">
+              {{ row.status === 'ACTIVE' ? 'Hoạt động' : 'Đã xóa' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -109,7 +114,7 @@
               Sửa
             </el-button>
             <el-button
-                v-if="row.status === 1"
+                v-if="row.status === 'ACTIVE'"
                 type="danger"
                 size="small"
                 :icon="Delete"
@@ -134,11 +139,11 @@
     </el-card>
   </div>
 </template>
-
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, ref, computed, onMounted, watch } from 'vue'
+import { useCourseStore } from '../../stores/courseStore.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import {
   Plus,
   Search,
@@ -148,16 +153,15 @@ import {
   Edit,
   Delete
 } from '@element-plus/icons-vue'
+import * as XLSX from "xlsx";
 
+const courseStore = useCourseStore()
 const router = useRouter()
-const loading = ref(false)
-const tableData = ref([])
-const total = ref(0)
 
 const searchForm = reactive({
-  keyword: '',
-  category: '',
-  status: null
+  name: null,
+  code: null,
+  status: 'ACTIVE'
 })
 
 const pagination = reactive({
@@ -165,78 +169,105 @@ const pagination = reactive({
   pageSize: 10
 })
 
-const mockData = [
-  {
-    id: 1,
-    name: 'Lập trình Web với Vue 3',
-    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=200',
-    price: 599000,
-    studentCount: 45,
-    lessonCount: 25,
-    category: 'web',
-    status: 1
-  },
-  {
-    id: 2,
-    name: 'React Native cơ bản',
-    thumbnail: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=200',
-    price: 799000,
-    studentCount: 32,
-    lessonCount: 30,
-    category: 'mobile',
-    status: 1
-  }
-]
+const tableData = computed(() => courseStore.courses)
+
+const total = computed(() => courseStore.total)
+const loading = computed(() => courseStore.loading)
+
+// --- Methods ---
 
 const fetchData = async () => {
-  loading.value = true
-  await new Promise(resolve => setTimeout(resolve, 500))
-  tableData.value = mockData
-  total.value = mockData.length
-  loading.value = false
+  await courseStore.fetchCourses({
+    name: searchForm.name,
+    code: searchForm.code,
+    status: searchForm.status || 'ACTIVE',
+    page: pagination.page,
+    pageSize: pagination.pageSize
+  })
 }
 
-const handleSearch = () => {
+const handleSearch = async () => {
   pagination.page = 1
-  fetchData()
+  await fetchData()
 }
 
-const handleReset = () => {
-  Object.keys(searchForm).forEach(key => searchForm[key] = key === 'status' ? null : '')
-  handleSearch()
+const handleReset = async () => {
+  searchForm.name = null;
+  searchForm.email = null;
+  searchForm.status = "ACTIVE";
+  pagination.page = 1
+  await fetchData()
 }
 
-const handleCreate = () => router.push('/courses/create')
-const handleView = (row) => router.push(`/courses/${row.id}`)
-const handleEdit = (row) => router.push(`/courses/${row.id}/edit`)
-const viewLessons = (row) => router.push(`/courses/${row.id}/lessons`)
-const viewStudents = (row) => router.push(`/courses/${row.id}/students`)
+const handleCreate = () => {
+  router.push('/courses/create')
+}
+
+const handleEdit = (row) => {
+  router.push({
+    path: `/courses/${row.id}/edit`,
+    query: { status: row.status }
+  })
+}
 
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm(
-        `Bạn có chắc chắn muốn xóa khóa học "${row.name}"?`,
-        'Xác nhận xóa',
-        { type: 'warning' }
-    )
+    await ElMessageBox.confirm(`Bạn có chắc muốn xóa khóa học "${row.name}"?`, 'Xác nhận', {
+      type: 'warning'
+    })
+    await courseStore.deleteCourse(row.id)
     ElMessage.success('Xóa khóa học thành công')
-    fetchData()
-  } catch (error) {}
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const handleView = (row) => {
+  console.log('View course', row)
+}
+
+const viewLessons = (row) => {
+  console.log('View lessons of course', row)
+}
+
+const viewStudents = (row) => {
+  console.log('View students of course', row)
 }
 
 const handleExport = () => {
-  ElMessage.success('Xuất Excel thành công')
+  try {
+    const exportData = tableData.value.map((item, index) => ({
+      'STT': index + 1,
+      'Tên khóa học': item.name,
+
+
+      'Mã khóa học': item.code,
+      'Trạng thái': (item.status === 1 || item.status === "ACTIVE") ? 'Hoạt động' : 'Đã xóa'
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Khóa học')
+    XLSX.writeFile(wb, `danh-sach-khoa-hoc-${Date.now()}.xlsx`)
+
+    ElMessage.success('Xuất Excel thành công')
+  } catch (error) {
+    ElMessage.error('Lỗi xuất Excel')
+  }
 }
 
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(value)
-}
+watch(
+    () => [pagination.page, pagination.pageSize],
+    async () => {
+      await fetchData()
+    }
+)
 
-onMounted(() => fetchData())
+onMounted(async () => {
+  await fetchData()
+})
 </script>
+
 
 <style scoped lang="scss">
 .page-container {

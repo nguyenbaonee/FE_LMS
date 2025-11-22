@@ -18,14 +18,6 @@
     </div>
 
     <div class="navbar-right">
-      <!-- Search -->
-      <el-input
-          v-model="searchQuery"
-          placeholder="Tìm kiếm..."
-          :prefix-icon="Search"
-          class="search-input"
-          clearable
-      />
 
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-info">
@@ -52,20 +44,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   Expand,
-  Search,
-  Bell,
   User,
-  Setting,
-  SwitchButton,
   ArrowDown
 } from '@element-plus/icons-vue'
 
 const emit = defineEmits(['toggle-sidebar'])
 const router = useRouter()
 const route = useRoute()
-
-const searchQuery = ref('')
-const notificationCount = ref(5)
 const userName = ref('Admin User')
 const userAvatar = ref('https://i.pravatar.cc/150?img=8')
 
@@ -77,9 +62,6 @@ const breadcrumbs = computed(() => {
   }))
 })
 
-const showNotifications = () => {
-  ElMessage.info('Hiển thị thông báo')
-}
 
 const handleCommand = (command) => {
   switch (command) {

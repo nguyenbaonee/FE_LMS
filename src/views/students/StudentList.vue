@@ -5,11 +5,14 @@
       <div class="header-content">
         <div class="header-left">
           <h2 class="page-title">Quản lý học viên</h2>
-          <el-tag type="info">Tổng: {{ total }} học viên</el-tag>
+          <el-tag type="info" class="tag-large">Tổng: {{ total }} học viên</el-tag>
         </div>
         <div class="header-right">
           <el-button type="success" :icon="Download" @click="handleExport">
-            Xuất Excel
+            Xuất theo tìm kiếm
+          </el-button>
+          <el-button type="success" :icon="Download" @click="handleExportAll">
+            Xuất tất cả
           </el-button>
           <el-button type="primary" :icon="Plus" @click="handleCreate">
             Thêm học viên
@@ -18,11 +21,9 @@
       </div>
     </el-card>
 
-    <!-- Search & Filter -->
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="searchForm">
 
-        <!-- Name input -->
         <el-form-item label="Tên">
           <el-input
               v-model="searchForm.name"
@@ -35,7 +36,6 @@
           />
         </el-form-item>
 
-        <!-- Email input -->
         <el-form-item label="Email">
           <el-input
               v-model="searchForm.email"
@@ -48,11 +48,10 @@
           />
         </el-form-item>
 
-        <!-- Status select -->
         <el-form-item label="Trạng thái">
           <el-select
               v-model="searchForm.status"
-              placeholder="Tất cả"
+              placeholder="Đang hoạt động"
               clearable
               style="width: 150px"
           >
@@ -61,7 +60,6 @@
           </el-select>
         </el-form-item>
 
-        <!-- Buttons -->
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="handleSearch">
             Tìm kiếm
@@ -73,7 +71,6 @@
     </el-card>
 
 
-    <!-- Table -->
     <el-card shadow="never">
       <el-table
           v-loading="loading"
@@ -85,10 +82,7 @@
 
         <el-table-column label="Avatar" width="80" align="center">
           <template #default="{ row }">
-            <el-avatar
-                :src="'http://localhost:8080' + (row.avatar?.find(a => a.primary)?.url || '')"
-                :size="50"
-            >
+            <el-avatar :src="getAvatarUrl(row)" :size="50">
               {{ row.name.charAt(0) }}
             </el-avatar>
 
@@ -150,7 +144,7 @@
             :page-sizes="[5, 10, 20]"
             layout="total, sizes, prev, pager, next, jumper"
             @current-change="fetchData"
-            @size-change="fetchData"
+            @size-change="handleSizeChange"
         >
         </el-pagination>
 
@@ -174,6 +168,7 @@ import {
   Delete
 } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
+import apiClient from "../../api/axios.js";
 
 const router = useRouter()
 
@@ -184,12 +179,23 @@ const searchForm = reactive({
   email: null,
   status: "ACTIVE"
 });
+const getAvatarUrl = (row) => {
+  const avatar = row.avatar?.find(a => a.primary)
+  if (!avatar) return ''
+  let url = avatar.url
+  if (!url) return ''
+  return 'http://localhost:8080' + encodeURI(url)
+}
 
 const pagination = reactive({
   page: 1,
   pageSize: 10
 })
-
+const handleSizeChange = (size) => {
+  pagination.pageSize = size
+  pagination.page = 1
+  fetchData()
+}
 const tableData = computed(() => studentStore.students)
 const loading = computed(() => studentStore.loading)
 const total = computed(() => studentStore.total)
@@ -207,15 +213,15 @@ const fetchData = () => {
 }
 
 
-const handleSearch = () => {
+const handleSearch = async () => {
   pagination.page = 1
-  fetchData()
+  await fetchData()
 }
 
 const handleReset = () => {
-  searchForm.name = '';
-  searchForm.email = '';
-  searchForm.status = null;
+  searchForm.name = null;
+  searchForm.email = null;
+  searchForm.status = 1;
   handleSearch();
 }
 
@@ -224,11 +230,18 @@ const handleCreate = () => {
 }
 
 const handleView = (row) => {
-  router.push(`/students/${row.id}`)
+  router.push({
+    path: `/students/${row.id}`,
+    query: { status: row.status }
+  })
 }
 
+
 const handleEdit = (row) => {
-  router.push(`/students/${row.id}/edit`)
+  router.push({
+    path: `/students/${row.id}/edit`,
+    query: { status: row.status }
+  })
 }
 
 const handleDelete = async (row) => {
@@ -274,6 +287,38 @@ const handleExport = () => {
     ElMessage.error('Lỗi xuất Excel')
   }
 }
+const handleExportAll = async () => {
+  try {
+    const res = await apiClient.get('/students/export', {
+      responseType: 'blob'
+    })
+
+    const filename = `student_report_${Date.now()}.xlsx`
+    const url = window.URL.createObjectURL(res.data)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    ElMessage.success('Xuất Excel thành công')
+  } catch (error) {
+    console.error(error)
+    if (error.response && error.response.data) {
+      // có thể backend trả lỗi JSON dạng AppException
+      const reader = new FileReader()
+      reader.onload = () => {
+        const msg = reader.result
+        ElMessage.error(msg)
+      }
+      reader.readAsText(error.response.data)
+    } else {
+      ElMessage.error('Lỗi xuất Excel')
+    }
+  }
+}
+
 
 onMounted(() => {
   fetchData()
@@ -297,9 +342,15 @@ onMounted(() => {
         align-items: center;
         gap: 12px;
 
+        /* Nổi bật */
+        background-color: #f0f8ff;   /* nền nhạt, dễ nhìn */
+        padding: 8px 16px;            /* khoảng cách bên trong */
+        border-radius: 8px;           /* bo góc mềm mại */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15); /* đổ bóng nhẹ */
+        font-weight: 500;
         .page-title {
           margin: 0;
-          font-size: 20px;
+          font-size: 25px;
           font-weight: 600;
         }
       }
@@ -320,6 +371,11 @@ onMounted(() => {
     display: flex;
     justify-content: flex-end;
   }
+}
+.tag-large {
+  font-size: 1.2rem;  /* tăng chữ lên */
+  font-weight: 600;   /* chữ đậm hơn */
+  padding: 6px 12px;  /* tùy chỉnh padding nếu muốn to hơn */
 }
 
 @media (max-width: 768px) {

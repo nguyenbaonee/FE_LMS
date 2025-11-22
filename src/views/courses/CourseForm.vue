@@ -44,6 +44,7 @@
                       v-model="mainThumbnailId"
                       :label="row.id"
                       @change="handleMainThumbnailChange(row.id)"
+                      :disabled="row.primary === true || existingThumbnails.length === 1"
                   >
                     Chọn
                   </el-radio>
@@ -206,10 +207,6 @@ const fetchData = async () => {
   try {
     const status = route.query.status
 
-    // TODO: Replace with your courseStore
-    // const course = await courseStore.fetchCourseById(route.params.id, status)
-
-    // Mock data - replace with actual API call
     const response = await axios.get(`/courses/${route.params.id}`)
     const course = response.data
 
@@ -217,7 +214,7 @@ const fetchData = async () => {
     formData.code = course.code
     formData.description = course.description || ''
 
-    existingThumbnails.value = course.thumbnails || []
+    existingThumbnails.value = course.thumbnail || []
 
     newThumbnails.value = []
     deleteThumbnailsId.value = []
@@ -265,12 +262,6 @@ const handleRemoveNewThumbnail = (file, uploadFiles) => {
 
 // Remove existing thumbnail
 const removeExistingThumbnail = (thumbnail) => {
-  // Không cho xóa nếu chỉ còn 1 thumbnail
-  if (existingThumbnails.value.length === 1) {
-    ElMessage.warning('Phải có ít nhất 1 thumbnail.')
-    return
-  }
-
   // Thêm vào danh sách xóa
   deleteThumbnailsId.value.push(thumbnail.id)
 
@@ -333,11 +324,6 @@ const handleSubmit = async () => {
 
         // Debug log
         console.log('=== UPDATE COURSE DATA ===')
-        console.log('Name:', formData.name)
-        console.log('Description:', formData.description)
-        console.log('New thumbnails count:', newThumbnails.value.length)
-        console.log('Delete thumbnail IDs:', deleteThumbnailsId.value)
-        console.log('Main thumbnail ID:', mainThumbnailId.value)
 
         // Call API UPDATE
         await axios.put(`/courses/${route.params.id}`, formDataToSend, {
@@ -347,31 +333,18 @@ const handleSubmit = async () => {
         ElMessage.success('Cập nhật khóa học thành công')
 
       } else {
-        // ===== MODE CREATE =====
-
         // Append new thumbnail files
         newThumbnails.value.forEach(file => {
           if (file.raw) {
             formDataToSend.append('images', file.raw)
           }
         })
-
-        // Debug log
-        console.log('=== CREATE COURSE DATA ===')
-        console.log('Name:', formData.name)
-        console.log('Code:', formData.code)
-        console.log('Description:', formData.description)
-        console.log('Thumbnail count:', newThumbnails.value.length)
-
-        // Call API CREATE
         await axios.post('/courses', formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
-
         ElMessage.success('Thêm khóa học thành công')
       }
 
-      // Redirect về danh sách
       router.push('/courses')
 
     } catch (error) {

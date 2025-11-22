@@ -10,9 +10,6 @@ export const useLessonStore = defineStore('lesson', () => {
     const loading = ref(false)
     const total = ref(0)
 
-    // --- Actions ---
-
-    // Tạo lesson, có upload images và videos
     const createLesson = async (courseId, lessonRequest, images = [], videos = []) => {
         loading.value = true
         try {
@@ -37,22 +34,19 @@ export const useLessonStore = defineStore('lesson', () => {
         }
     }
 
-    // Lấy danh sách lesson theo courseId, có paging
-    const fetchLessonsByCourse = async (courseId, page = 1, pageSize = 10) => {
+    const fetchLessonsByCourse = async (courseId, status='ACTIVE', page=1, pageSize=10) => {
         loading.value = true
         try {
             const res = await apiClient.get('/lessons', {
-                params: {
-                    courseId,
-                    page: page - 1, // backend 0-based
-                    size: pageSize
-                }
+                params: { courseId, status, page: page-1, size: pageSize }
             })
-            lessons.value = res.data.content
-            total.value = res.data.totalElements
-            return res.data
+            console.log(res.data) // <-- log dữ liệu ở đây
+
+            // res.data.data = Page<LessonDTO>
+            lessons.value = res.data?.data?.content || []
+            total.value = res.data?.data?.totalElements || 0
+            return res.data.data // trả Page object nếu cần FE xử lý thêm
         } catch (err) {
-            console.error('Fetch lessons error:', err)
             lessons.value = []
             total.value = 0
             throw err
@@ -60,6 +54,7 @@ export const useLessonStore = defineStore('lesson', () => {
             loading.value = false
         }
     }
+
 
     // Xóa lesson theo lessonId
     const deleteLesson = async (lessonId) => {

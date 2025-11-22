@@ -1,83 +1,72 @@
 <template>
   <div class="page-container">
-    <el-card shadow="never" class="page-header">
-      <div class="header-content">
+    <!-- Header -->
+    <el-card shadow="never" class="page-header" style="padding: 20px;">
+      <div class="header-content" style="display: flex; justify-content: space-between; align-items: center;">
         <div class="header-left">
           <h2 class="page-title">Quản lý bài học</h2>
           <el-tag v-if="courseName" type="warning">
-            Khóa học: {{ courseName }}
+            {{ courseName }}
           </el-tag>
           <el-tag type="info">Tổng: {{ total }} bài học</el-tag>
         </div>
-        <div class="header-right">
+
+        <div class="header-right" style="display: flex; gap: 10px; align-items: center;">
           <el-button type="primary" :icon="Plus" @click="handleCreate">
             Thêm bài học
           </el-button>
+
+          <!-- Dropdown trạng thái bo tròn -->
+          <el-select
+              v-model="searchForm.status"
+              placeholder="Đang hoạt động"
+              clearable
+              style="width: 150px; border-radius: 8px; height: 36px;"
+              @change="onStatusChange"
+          >
+            <el-option label="Đang hoạt động" value="ACTIVE" />
+            <el-option label="Đã xóa" value="DELETED" />
+          </el-select>
         </div>
       </div>
     </el-card>
 
-    <el-card shadow="never" class="filter-card">
-      <el-form :inline="true" :model="searchForm">
-        <el-form-item label="Khóa học">
-          <el-select
-              v-model="searchForm.courseId"
-              placeholder="Chọn khóa học"
-              clearable
-              style="width: 250px"
-              @change="handleSearch"
-          >
-            <el-option
-                v-for="course in courses"
-                :key="course.id"
-                :label="course.name"
-                :value="course.id"
-            />
-          </el-select>
-        </el-form-item>
 
-        <el-form-item label="Tìm kiếm">
-          <el-input
-              v-model="searchForm.keyword"
-              placeholder="Tên bài học..."
-              :prefix-icon="Search"
-              clearable
-              style="width: 250px"
-          />
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">
-            Tìm kiếm
-          </el-button>
-          <el-button :icon="Refresh" @click="handleReset">Reset</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
+    <!-- Table -->
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-table
+          v-loading="loading"
+          :data="sortedTableData"
+          :row-key="row => row.id"
+          stripe
+      >
         <el-table-column type="index" label="STT" width="60" align="center" />
 
+        <!-- Thumbnail -->
         <el-table-column label="Thumbnail" width="120" align="center">
           <template #default="{ row }">
             <el-image
-                :src="row.thumbnail"
-                :preview-src-list="[row.thumbnail]"
+                :src="getThumbnail(row.thumbnails)"
+                :preview-src-list="[getThumbnail(row.thumbnails)]"
                 fit="cover"
                 style="width: 80px; height: 50px; border-radius: 4px"
             />
           </template>
         </el-table-column>
 
-        <el-table-column prop="title" label="Tiêu đề" min-width="250" />
+        <el-table-column prop="title" label="Tiêu đề" min-width="200" />
+        <el-table-column label="Khóa học" width="200">
+          <template #default="{ row }">
+            {{ courseName }}
+          </template>
+        </el-table-column>
 
-        <el-table-column prop="courseName" label="Khóa học" width="200" />
 
+        <!-- Video -->
         <el-table-column label="Video" width="100" align="center">
           <template #default="{ row }">
             <el-button
-                v-if="row.videoUrl"
+                v-if="getVideo(row.thumbnails)"
                 type="primary"
                 size="small"
                 link
@@ -90,26 +79,23 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Thời lượng" width="100" align="center">
-          <template #default="{ row }">
-            {{ row.duration }}
-          </template>
-        </el-table-column>
-
+        <!-- Order -->
         <el-table-column label="Thứ tự" width="80" align="center">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.order }}</el-tag>
+            <el-tag size="small">{{ row.lessonOrder }}</el-tag>
           </template>
         </el-table-column>
 
+        <!-- Status -->
         <el-table-column label="Trạng thái" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? 'Hoạt động' : 'Đã xóa' }}
+            <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'">
+              {{ row.status === 'ACTIVE' ? 'Hoạt động' : 'Đã xóa' }}
             </el-tag>
           </template>
         </el-table-column>
 
+        <!-- Actions -->
         <el-table-column label="Thao tác" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" :icon="View" link @click="handleView(row)">
@@ -119,7 +105,7 @@
               Sửa
             </el-button>
             <el-button
-                v-if="row.status === 1"
+                v-if="row.status === 'ACTIVE'"
                 type="danger"
                 size="small"
                 :icon="Delete"
@@ -132,6 +118,7 @@
         </el-table-column>
       </el-table>
 
+      <!-- Pagination -->
       <div class="pagination-container">
         <el-pagination
             v-model:current-page="pagination.page"
@@ -139,6 +126,8 @@
             :page-sizes="[10, 20, 50]"
             :total="total"
             layout="total, sizes, prev, pager, next, jumper"
+            @current-change="onPageChange"
+            @size-change="onPageSizeChange"
         />
       </div>
     </el-card>
@@ -159,98 +148,84 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {
-  Plus,
-  Search,
-  Refresh,
-  View,
-  Edit,
-  Delete,
-  VideoPlay
-} from '@element-plus/icons-vue'
+import { useLessonStore } from '../../stores/lessonStore.js'
+import { Plus, View, Edit, Delete, VideoPlay } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const lessonStore = useLessonStore()
 
-const loading = ref(false)
-const tableData = ref([])
-const total = ref(0)
 const videoDialogVisible = ref(false)
 const currentVideo = ref('')
-
-const courses = ref([
-  { id: 1, name: 'Lập trình Web với Vue 3' },
-  { id: 2, name: 'React Native cơ bản' }
-])
+const courseName = ref(route.query.name || '');
 
 const searchForm = reactive({
   courseId: route.params.courseId || '',
   keyword: ''
 })
-
 const pagination = reactive({
   page: 1,
   pageSize: 10
 })
-
-const courseName = computed(() => {
-  const course = courses.value.find(c => c.id == searchForm.courseId)
-  return course?.name || ''
+const sortedTableData = computed(() => {
+  return [...lessonStore.lessons].sort((a, b) => a.lessonOrder - b.lessonOrder)
 })
+const total = computed(() => lessonStore.total)
+const loading = computed(() => lessonStore.loading)
 
-const mockData = [
-  {
-    id: 1,
-    title: 'Giới thiệu về Vue 3',
-    courseName: 'Lập trình Web với Vue 3',
-    courseId: 1,
-    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=200',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    duration: '15:30',
-    order: 1,
-    status: 1
-  },
-  {
-    id: 2,
-    title: 'Cài đặt môi trường',
-    courseName: 'Lập trình Web với Vue 3',
-    courseId: 1,
-    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=200',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    duration: '20:45',
-    order: 2,
-    status: 1
-  }
-]
+const getThumbnail = (thumbnails) => {
+  const thumbnail = thumbnails?.find(t => t.primary && t.type === 'THUMBNAIL');
+  if (!thumbnail || !thumbnail.url) return '';
+  // thêm host nếu url chưa đầy đủ
+  return 'http://localhost:8080' + encodeURI(thumbnail.url);
+};
 
-const fetchData = async () => {
-  loading.value = true
-  await new Promise(resolve => setTimeout(resolve, 500))
-  tableData.value = mockData
-  total.value = mockData.length
-  loading.value = false
+const onStatusChange = (status) => {
+  searchForm.status = status;
+  fetchData();
+};
+const getVideo = (thumbnails) => {
+  return thumbnails?.find(t => t.type === 'VIDEO')?.url || ''
 }
 
-const handleSearch = () => {
+const fetchData = async () => {
+  try {
+    const status = searchForm.status || 'ACTIVE'
+    const courseId = route.params.courseId;
+    await lessonStore.fetchLessonsByCourse(
+        courseId,
+        status,
+        pagination.page,
+        pagination.pageSize
+    )
+  } catch (error) {
+    console.error('Fetch lessons error:', error)
+    const msg = error.response?.data?.message || error.message || 'Không thể tải dữ liệu bài học'
+    ElMessage.error(msg)
+  }
+}
+
+// Pagination events
+const onPageChange = (page) => {
+  pagination.page = page
+  fetchData()
+}
+const onPageSizeChange = (size) => {
+  pagination.pageSize = size
   pagination.page = 1
   fetchData()
 }
 
-const handleReset = () => {
-  searchForm.keyword = ''
-  if (!route.params.courseId) {
-    searchForm.courseId = ''
-  }
-  handleSearch()
-}
-
+// Actions
 const handleCreate = () => {
   const query = searchForm.courseId ? { courseId: searchForm.courseId } : {}
   router.push({ path: '/lessons/create', query })
 }
 
 const handleView = (row) => router.push(`/lessons/${row.id}`)
+
 const handleEdit = (row) => router.push(`/lessons/${row.id}/edit`)
+
 
 const handleDelete = async (row) => {
   try {
@@ -259,23 +234,26 @@ const handleDelete = async (row) => {
         'Xác nhận xóa',
         { type: 'warning' }
     )
+    await lessonStore.deleteLesson(row.id)
     ElMessage.success('Xóa bài học thành công')
     fetchData()
-  } catch (error) {}
+  } catch (error) {
+    console.error('Fetch lessons error:', error)
+    const msg = error.response?.data?.message || error.message || 'Có lỗi khi xóa dữ liệu bài học'
+    ElMessage.error(msg)
+  }
 }
-
 const previewVideo = (row) => {
-  currentVideo.value = row.videoUrl
+  currentVideo.value = getVideo(row.thumbnails)
   videoDialogVisible.value = true
 }
 
+// On mounted, fetch data
 onMounted(() => {
-  if (route.params.courseId) {
-    searchForm.courseId = route.params.courseId
-  }
   fetchData()
 })
 </script>
+
 
 <style scoped lang="scss">
 .page-container {

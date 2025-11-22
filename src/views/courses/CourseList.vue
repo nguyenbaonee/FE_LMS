@@ -64,32 +64,37 @@
         <el-table-column label="Thumbnail" width="120" align="center">
           <template #default="{ row }">
             <el-image
-                :src="row.thumbnail"
-                :preview-src-list="[row.thumbnail]"
-                fit="cover"
-                style="width: 80px; height: 50px; border-radius: 4px"
+                :src="getPrimaryThumbnailUrl(row)"
+            :preview-src-list="row.thumbnail?.map(t => 'http://localhost:8080' + encodeURI(t.url)) || []"
+            fit="cover"
+            style="width: 80px; height: 50px; border-radius: 4px"
             />
+
           </template>
         </el-table-column>
 
-        <el-table-column prop="name" label="Tên khóa học" min-width="200" />
+        <el-table-column prop="name" label="Tên khóa học" min-width="150" />
 
         <el-table-column label="Mã khóa học" width="120" align="right">
           <template #default="{ row }">
             {{ row.code }}
           </template>
         </el-table-column>
-
+        <el-table-column label="Mô tả" width="200" align="right">
+          <template #default="{ row }">
+            {{ row.description }}
+          </template>
+        </el-table-column>
         <el-table-column label="Học viên" width="100" align="center">
           <template #default="{ row }">
             <el-tag type="success">{{ row.studentCount }}</el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column label="Bài học" width="100" align="center">
+        <el-table-column label="Quản Lý Bài Giảng" width="100" align="center">
           <template #default="{ row }">
             <el-link type="primary" @click="viewLessons(row)">
-              {{ row.lessonCount }} bài
+              Xem Bài giảng
             </el-link>
           </template>
         </el-table-column>
@@ -106,9 +111,6 @@
           <template #default="{ row }">
             <el-button type="info" size="small" link @click="viewStudents(row)">
               Học viên
-            </el-button>
-            <el-button type="primary" size="small" :icon="View" link @click="handleView(row)">
-              Xem
             </el-button>
             <el-button type="warning" size="small" :icon="Edit" link @click="handleEdit(row)">
               Sửa
@@ -140,7 +142,7 @@
   </div>
 </template>
 <script setup>
-import { reactive, ref, computed, onMounted, watch } from 'vue'
+import { reactive, computed, onMounted, watch } from 'vue'
 import { useCourseStore } from '../../stores/courseStore.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -149,7 +151,6 @@ import {
   Search,
   Refresh,
   Download,
-  View,
   Edit,
   Delete
 } from '@element-plus/icons-vue'
@@ -157,7 +158,6 @@ import * as XLSX from "xlsx";
 
 const courseStore = useCourseStore()
 const router = useRouter()
-
 const searchForm = reactive({
   name: null,
   code: null,
@@ -185,6 +185,15 @@ const fetchData = async () => {
     pageSize: pagination.pageSize
   })
 }
+
+const getPrimaryThumbnailUrl = (course) => {
+  const thumbnail = course.thumbnail?.find(t => t.primary)
+  if (!thumbnail) return ''
+  const url = thumbnail.url
+  if (!url) return ''
+  return 'http://localhost:8080' + encodeURI(url)
+}
+
 
 const handleSearch = async () => {
   pagination.page = 1
@@ -222,13 +231,13 @@ const handleDelete = async (row) => {
   }
 }
 
-const handleView = (row) => {
-  console.log('View course', row)
-}
-
 const viewLessons = (row) => {
-  console.log('View lessons of course', row)
-}
+  router.push({
+    path: `/courses/${row.id}/lessons`,
+    query: { status: row.status, name: row.name } // gửi tên luôn
+  });
+};
+
 
 const viewStudents = (row) => {
   console.log('View students of course', row)

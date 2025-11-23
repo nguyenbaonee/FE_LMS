@@ -1,14 +1,11 @@
-<!-- ============================================ -->
-<!-- Dashboard.vue - Trang tổng quan -->
-<!-- ============================================ -->
 <template>
   <div class="dashboard">
     <!-- Welcome Section -->
     <el-card shadow="never" class="welcome-card">
       <div class="welcome-content">
         <div class="welcome-text">
-          <h1 class="welcome-title">Chào mừng đến với LMS Mini 👋</h1>
-          <p class="welcome-desc">Hệ thống quản lý khóa học online</p>
+          <h1 class="welcome-title">EduNovel - NguyenBao </h1>
+          <p class="welcome-desc">Hệ thống quản lý khóa học</p>
         </div>
         <div class="welcome-actions">
           <el-button type="primary" :icon="Plus" size="large" @click="router.push('/students/create')">
@@ -138,39 +135,6 @@
               </div>
               <el-icon class="arrow-icon"><ArrowRight /></el-icon>
             </el-button>
-          </div>
-        </el-card>
-
-        <!-- Popular Courses -->
-        <el-card shadow="never" style="margin-top: 20px">
-          <template #header>
-            <span class="card-title">
-              <el-icon><Star /></el-icon>
-              Khóa học phổ biến
-            </span>
-          </template>
-
-          <div class="popular-courses">
-            <div
-                v-for="(course, index) in popularCourses"
-                :key="course.id"
-                class="course-item"
-                @click="router.push(`/courses/${course.id}`)"
-            >
-              <div class="course-rank">{{ index + 1 }}</div>
-              <el-image
-                  :src="course.thumbnail"
-                  fit="cover"
-                  style="width: 60px; height: 40px; border-radius: 4px"
-              />
-              <div class="course-info">
-                <div class="course-name">{{ course.name }}</div>
-                <div class="course-students">
-                  <el-icon><UserFilled /></el-icon>
-                  <span>{{ course.studentCount }} học viên</span>
-                </div>
-              </div>
-            </div>
           </div>
         </el-card>
       </el-col>

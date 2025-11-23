@@ -72,7 +72,30 @@
             </el-card>
           </el-radio-group>
         </el-form-item>
-
+        <el-form-item v-if="enrolledCourses.length > 0" label="Khóa học đã đăng ký">
+          <el-table
+              :data="enrolledCourses"
+              border
+              style="width: 100%"
+          >
+            <el-table-column prop="name" label="Tên khóa học" />
+            <el-table-column prop="code" label="Mã" width="120"/>
+            <el-table-column prop="status" label="Trạng thái" width="120">
+              <template #default="scope">
+                <el-tag type="success" size="small">{{ scope.row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="Thao tác" width="100">
+              <template #default="scope">
+                <el-button
+                    type="danger"
+                    size="mini"
+                    @click="removeEnrolledCourse(scope.row)"
+                >Xóa</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-form-item>
         <!-- Search Courses -->
         <el-form-item label="Tìm kiếm khóa học" required>
           <el-card shadow="never" style="background: #f5f7fa; width: 100%">
@@ -162,6 +185,7 @@
         </el-form-item>
       </el-form>
     </el-card>
+
   </div>
 </template>
 
@@ -224,8 +248,18 @@ const getCourseNameById = (courseId) => {
   const course = searchedCourses.value.find(c => c.id === courseId)
   return course ? course.name : ''
 }
+const removedCourseIds = ref([])
 
-// Search Student
+const removeEnrolledCourse = (course) => {
+  enrolledCourses.value = enrolledCourses.value.filter(c => c.id !== course.id)
+
+  formData.courseIds = formData.courseIds.filter(id => id !== course.id)
+
+  removedCourseIds.value.push(course.id)
+
+  ElMessage.success(`Đã xóa khóa học "${course.name}" khỏi học viên`)
+}
+
 const handleSearchStudent = async () => {
   if (!studentSearchForm.name && !studentSearchForm.email) {
     ElMessage.warning('Vui lòng nhập tên hoặc email để tìm kiếm')
@@ -256,7 +290,6 @@ const handleSearchStudent = async () => {
   }
 }
 
-// Search Course
 const handleSearchCourse = async () => {
   if (!courseSearchForm.name && !courseSearchForm.code) {
     ElMessage.warning('Vui lòng nhập tên hoặc mã để tìm kiếm')
@@ -271,8 +304,13 @@ const handleSearchCourse = async () => {
     }
 
     const response = await axios.get('/courses', { params })
+    let results = response.data.content || response.data
 
-    searchedCourses.value = response.data.content || response.data
+    // Lọc bỏ các khóa học đã có trong enrolledCourses
+    const enrolledIds = enrolledCourses.value.map(c => c.id)
+    results = results.filter(c => !enrolledIds.includes(c.id))
+
+    searchedCourses.value = results
 
     if (searchedCourses.value.length === 0) {
       ElMessage.info('Không tìm thấy khóa học nào')
@@ -290,6 +328,8 @@ const handleSearchCourse = async () => {
   }
 }
 
+const enrolledCourses = ref([])
+
 
 const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
@@ -301,17 +341,19 @@ const handleSubmit = async () => {
     submitting.value = true
 
     try {
-      const payload = {
-        studentId: formData.studentId,
-        courseIds: formData.courseIds,
-        note: formData.note || undefined
-      }
-
       if (isEdit.value) {
-        // Nếu đang edit, gọi PUT
+        // PUT enrollment
+        const payload = {
+          newCourseIds: formData.courseIds,
+          deleteCourseIds: removedCourseIds.value
+        }
         await axios.put(`/enrollments/${route.params.id}`, payload)
         ElMessage.success(`Cập nhật thành công ${formData.courseIds.length} khóa học`)
-      } else {
+      }  else {
+        const payload = {
+          studentId: formData.studentId,
+          courseIds: formData.courseIds
+        }
         // Nếu đang tạo mới, gọi POST
         await axios.post('/enrollments', payload)
         ElMessage.success(`Đăng ký thành công ${formData.courseIds.length} khóa học cho học viên ${selectedStudentName.value}`)
@@ -339,19 +381,18 @@ const fetchData = async () => {
   if (!enrollmentId || !studentId) return
 
   try {
-    // Lấy danh sách enrollment
     const response = await axios.get(`/enrollments/student/${studentId}`)
     const data = response.data
 
-    // Lấy danh sách courseId từ content
+    // Courses đã đăng ký
+    enrolledCourses.value = data.content.map(e => ({
+      ...e.course,
+      isEnrolled: true
+    }))
+
     formData.courseIds = data.content.map(e => e.course.id)
 
-    // Lấy thông tin course để hiển thị trong form
-    searchedCourses.value = data.content.map(e => e.course)
-
-    // studentId cố định (khóa lại form nếu là edit)
     formData.studentId = studentId
-
     isEdit.value = true
   } catch (error) {
     console.error('Fetch enrollment error:', error)

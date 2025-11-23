@@ -26,13 +26,13 @@ const routes = [
             {
                 path: 'students/create',
                 name: 'StudentCreate',
-                component: () => import('../views/students/StudentForm.vue'),
+                component: () => import('../views/students/a.vue'),
                 meta: { title: 'Thêm học viên', parent: 'Students' }
             },
             {
                 path: 'students/:id/edit',
                 name: 'StudentEdit',
-                component: () => import('../views/students/StudentForm.vue'),
+                component: () => import('../views/students/a.vue'),
                 meta: { title: 'Sửa học viên', parent: 'Students' },
                 props: true
             },

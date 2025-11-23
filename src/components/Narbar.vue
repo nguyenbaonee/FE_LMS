@@ -41,7 +41,7 @@
       <!-- Dropdown thông tin user -->
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-info">
-          <el-avatar :src="userAvatar" :size="36">{{ userName }}</el-avatar>
+          <el-avatar :src="image.avatar" :size="36">{{ userName }}</el-avatar>
           <span class="user-name">{{ userName }}</span>
           <el-icon><ArrowDown /></el-icon>
         </div>
@@ -73,6 +73,8 @@
     import { useI18n } from 'vue-i18n'
     import { useLocaleStore } from '../stores/useLocaleStore'
     import axios from 'axios'
+    import image from '../assets/images/images.js'
+
 
     const localeStore = useLocaleStore()
     const { locale } = useI18n()
@@ -88,7 +90,7 @@
     const emit = defineEmits(['toggle-sidebar'])
     const router = useRouter()
     const route = useRoute()
-    const userName = ref('Admin User')
+    const userName = ref('Nguyễn Văn Bảo')
     const userAvatar = ref('https://i.pravatar.cc/150?img=8')
 
     const breadcrumbs = computed(() => {

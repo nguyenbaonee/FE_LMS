@@ -15,7 +15,88 @@
           label-width="180px"
           label-position="left"
       >
-        <!-- Upload hình ảnh -->
+
+        <!-- Existing Thumbnails -->
+        <el-form-item v-if="isEdit && existingThumbnails.length > 0" :label="$t('lessonForm.images.existing')">
+          <el-table :data="existingThumbnails" border style="width: 100%">
+            <el-table-column label="Ảnh" width="120" align="center">
+              <template #default="{ row }">
+                <el-image
+                    :src="'http://localhost:8080' + encodeURI(row.url)"
+                    fit="cover"
+                    style="width: 100px; height: 60px; border-radius: 4px"
+                />
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Trạng thái" width="150" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.primary" type="success" effect="dark">
+                  Thumbnail chính
+                </el-tag>
+                <el-tag v-else type="info">Thumbnail phụ</el-tag>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Đặt làm thumbnail chính" width="200" align="center">
+              <template #default="{ row }">
+                <el-radio
+                    v-model="mainThumbnailId"
+                    :label="row.id"
+                    @change="handleMainThumbnailChange(row.id)"
+                    :disabled="row.primary"
+                >
+                  Chọn
+                </el-radio>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Hành động" width="120" align="center">
+              <template #default="{ row }">
+                <el-popconfirm
+                    title="Bạn có chắc muốn xóa thumbnail này?"
+                    confirm-button-text="Xóa"
+                    cancel-button-text="Hủy"
+                    @confirm="removeExistingThumbnail(row)"
+                >
+                  <template #reference>
+                    <el-button type="danger" size="small" :disabled="row.primary">
+                      Xóa
+                    </el-button>
+                  </template>
+                </el-popconfirm>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-form-item>
+
+        <!-- Existing Videos -->
+        <el-form-item v-if="isEdit && existingVideos.length > 0" :label="$t('lessonForm.videos.existing')">
+          <el-table :data="existingVideos" border style="width: 100%">
+            <el-table-column label="Video" align="center">
+              <template #default="{ row }">
+                <a :href="'http://localhost:8080' + encodeURI(row.url)" target="_blank">{{ row.name }}</a>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Hành động" width="120" align="center">
+              <template #default="{ row }">
+                <el-popconfirm
+                    title="Bạn có chắc muốn xóa video này?"
+                    confirm-button-text="Xóa"
+                    cancel-button-text="Hủy"
+                    @confirm="removeExistingVideo(row)"
+                >
+                  <template #reference>
+                    <el-button type="danger" size="small">Xóa</el-button>
+                  </template>
+                </el-popconfirm>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-form-item>
+
+        <!-- Upload new images -->
         <el-form-item :label="$t('lessonForm.images.label')" prop="images">
           <el-upload
               v-model:file-list="newImages"
@@ -26,14 +107,12 @@
               :before-upload="beforeImageUpload"
               accept="image/jpeg,image/png,image/jpg"
           >
-            <el-icon class="thumbnail-uploader-icon">
-              <Plus />
-            </el-icon>
+            <el-icon class="thumbnail-uploader-icon"><Plus /></el-icon>
           </el-upload>
           <div class="upload-tip">{{ $t('lessonForm.images.tip') }}</div>
         </el-form-item>
 
-        <!-- Upload video -->
+        <!-- Upload new videos -->
         <el-form-item :label="$t('lessonForm.videos.label')" prop="videos" required>
           <el-upload
               v-model:file-list="newVideos"
@@ -80,6 +159,7 @@
           <el-button @click="handleReset">{{ $t('lessonForm.buttons.reset') }}</el-button>
           <el-button @click="handleBack">{{ $t('lessonForm.buttons.cancel') }}</el-button>
         </el-form-item>
+
       </el-form>
     </el-card>
   </div>
@@ -100,9 +180,13 @@ const formRef = ref()
 const isEdit = ref(false)
 const submitting = ref(false)
 
-// File uploads
-const newImages = ref([]) // images optional
-const newVideos = ref([]) // videos required
+const newImages = ref([]) // thumbnail mới
+const newVideos = ref([]) // video mới
+const existingThumbnails = ref([]) // thumbnail hiện có
+const existingVideos = ref([]) // video hiện có
+const deleteThumbnailsId = ref([])
+const deleteVideosId = ref([])
+const mainThumbnailId = ref(null)
 
 const formData = reactive({
   title: '',
@@ -177,70 +261,87 @@ const handleRemoveNewImage = (file, fileList) => { newImages.value = fileList }
 const handleVideoChange = (file, fileList) => { newVideos.value = fileList }
 const handleRemoveNewVideo = (file, fileList) => { newVideos.value = fileList }
 
+const removeExistingThumbnail = (thumbnail) => {
+  deleteThumbnailsId.value.push(thumbnail.id)
+  existingThumbnails.value = existingThumbnails.value.filter(t => t.id !== thumbnail.id)
+}
+const removeExistingVideo = (video) => {
+  deleteVideosId.value.push(video.id)
+  existingVideos.value = existingVideos.value.filter(v => v.id !== video.id)
+}
+const handleMainThumbnailChange = (thumbnailId) => {
+  mainThumbnailId.value = thumbnailId
+}
+const fetchLessonData = async () => {
+  try {
+    const response = await axios.get(`/lessons/${route.params.id}`)
+    const lesson = response.data
+
+    formData.title = lesson.title
+    formData.lessonOrder = lesson.lessonOrder
+
+    existingThumbnails.value = lesson.thumbnail || []
+    existingVideos.value = lesson.videos || []
+
+    if (existingThumbnails.value.length > 0) {
+      const primary = existingThumbnails.value.find(t => t.primary)
+      mainThumbnailId.value = primary?.id || null
+    }
+
+  } catch (error) {
+    console.error('Fetch lesson error:', error)
+    ElMessage.error('Không thể tải dữ liệu bài học')
+  }
+}
 // Submit form
 const handleSubmit = async () => {
   if (!formRef.value) return
-
   await formRef.value.validate(async (valid) => {
-    if (!valid) {
-      ElMessage.error('Vui lòng kiểm tra lại thông tin')
-      return
-    }
-
-    if (newVideos.value.length === 0) {
-      ElMessage.error('Vui lòng chọn ít nhất 1 video')
-      return
-    }
+    if (!valid) { ElMessage.error('Vui lòng kiểm tra lại thông tin'); return }
+    if (!isEdit.value && newVideos.value.length === 0) { ElMessage.error('Vui lòng chọn ít nhất 1 video'); return }
 
     submitting.value = true
-
     try {
       const courseId = Number(route.query.courseId)
-      if (!courseId) {
-        ElMessage.error('Không xác định được khóa học')
-        return
-      }
-      const formDataToSend = new FormData()
-      formDataToSend.append('title', formData.title.trim())
-      formDataToSend.append('lessonOrder', formData.lessonOrder)
+      if (!courseId) { ElMessage.error('Không xác định được khóa học'); return }
 
-      // Append images
-      newImages.value.forEach(file => {
-        if (file.raw) formDataToSend.append('images', file.raw)
-      })
+      const data = new FormData()
+      data.append('title', formData.title.trim())
+      data.append('lessonOrder', formData.lessonOrder)
 
-      // Append videos
-      newVideos.value.forEach(file => {
-        if (file.raw) formDataToSend.append('videos', file.raw)
-      })
+      // New files
+      newImages.value.forEach(f => { if(f.raw) data.append('images', f.raw) })
+      newVideos.value.forEach(f => { if(f.raw) data.append('videos', f.raw) })
+
+      // Deleted existing files
+      deleteThumbnailsId.value.forEach(id => data.append('deleteThumbnailId', id))
+      deleteVideosId.value.forEach(id => data.append('deleteVideos', id))
+
+      // Main thumbnail
+      if (mainThumbnailId.value) data.append('mainThumbnailId', mainThumbnailId.value)
 
       // Call API
       if (isEdit.value) {
-        await axios.put(`/lessons/${route.params.id}`, formDataToSend, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+        await axios.put(`/lessons/${route.params.id}`, data, { headers: { 'Content-Type':'multipart/form-data' } })
         ElMessage.success('Cập nhật bài học thành công')
       } else {
-        await axios.post(`/lessons/${courseId}`, formDataToSend, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+        await axios.post(`/lessons/${courseId}`, data, { headers: { 'Content-Type':'multipart/form-data' } })
         ElMessage.success('Thêm bài học thành công')
       }
 
       router.push(`/courses/${courseId}/lessons`)
+
     } catch (error) {
       console.error('Submit error:', error)
       ElMessage.error(error.response?.data?.message || 'Có lỗi xảy ra')
-    } finally {
-      submitting.value = false
-    }
+    } finally { submitting.value = false }
   })
 }
-
 const handleReset = () => {
   formRef.value?.resetFields()
   newImages.value = []
   newVideos.value = []
+  if (isEdit.value) fetchLessonData()
   ElMessage.info('Đã làm mới form')
 }
 
@@ -249,8 +350,7 @@ const handleBack = () => { router.back() }
 onMounted(() => {
   if (route.params.id) {
     isEdit.value = true
-    // Fetch lesson data for edit if cần (optional)
-    // fetchLessonData()
+    fetchLessonData()
   }
 })
 </script>

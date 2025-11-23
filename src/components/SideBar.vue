@@ -32,11 +32,6 @@
         <template #title>Quản lý khóa học</template>
       </el-menu-item>
 
-      <el-menu-item index="/lessons">
-        <el-icon><Document /></el-icon>
-        <template #title>Quản lý bài học</template>
-      </el-menu-item>
-
       <el-menu-item index="/enrollments">
         <el-icon><Tickets /></el-icon>
         <template #title>Đăng ký học</template>

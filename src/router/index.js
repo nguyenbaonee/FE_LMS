@@ -72,6 +72,12 @@ const routes = [
             },
 
             {
+                path: 'lessonsM',
+                name: 'LessonsM',
+                component: () => import('../views/lessons/LessonManager.vue'),
+                meta: { title: 'Quản trị bài học' }
+            },
+            {
                 path: 'lessons',
                 name: 'Lessons',
                 component: () => import('../views/lessons/LessonList.vue'),
@@ -97,6 +103,12 @@ const routes = [
                 name: 'Enrollments',
                 component: () => import('../views/enrollments/EnrollmentList.vue'),
                 meta: { title: 'Quản lý đăng ký học', icon: 'Tickets' }
+            },
+            {
+                path: 'enrollments/detail',
+                name: 'EnrollmentDetail',
+                component: () => import('../views/enrollments/EnrollmentDetail.vue'),
+                meta: { title: 'Xem chi tiết đăng ký', parent: 'EnrollmentsDetail' }
             },
             {
                 path: 'enrollments/create',

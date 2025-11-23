@@ -79,13 +79,6 @@
           </template>
         </el-table-column>
 
-        <!-- Order -->
-        <el-table-column label="Thứ tự" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag size="small">{{ row.lessonOrder }}</el-tag>
-          </template>
-        </el-table-column>
-
         <!-- Status -->
         <el-table-column label="Trạng thái" width="120" align="center">
           <template #default="{ row }">

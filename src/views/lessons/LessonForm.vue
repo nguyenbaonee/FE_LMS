@@ -12,127 +12,76 @@
           ref="formRef"
           :model="formData"
           :rules="rules"
-          label-width="140px"
+          label-width="180px"
+          label-position="left"
       >
-        <el-form-item label="Khóa học" prop="courseId" required>
-          <el-select
-              v-model="formData.courseId"
-              placeholder="Chọn khóa học"
-              style="width: 100%"
-          >
-            <el-option
-                v-for="course in courses"
-                :key="course.id"
-                :label="course.name"
-                :value="course.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <!-- Thumbnail Upload -->
-        <el-form-item label="Thumbnail" prop="thumbnail">
+        <!-- Upload hình ảnh (images) -->
+        <el-form-item label="Hình ảnh" prop="images">
           <el-upload
-              class="thumbnail-uploader"
-              :show-file-list="false"
-              :before-upload="beforeThumbnailUpload"
-              :http-request="handleThumbnailUpload"
+              v-model:file-list="newImages"
+              list-type="picture-card"
+              :auto-upload="false"
+              :on-change="handleImageChange"
+              :on-remove="handleRemoveNewImage"
+              :before-upload="beforeImageUpload"
+              accept="image/jpeg,image/png,image/jpg"
           >
-            <el-image
-                v-if="formData.thumbnail"
-                :src="formData.thumbnail"
-                fit="cover"
-                style="width: 300px; height: 180px"
-            />
-            <div v-else class="upload-placeholder">
-              <el-icon class="upload-icon"><Picture /></el-icon>
-              <div>Click để upload thumbnail</div>
-            </div>
+            <el-icon class="thumbnail-uploader-icon">
+              <Plus />
+            </el-icon>
           </el-upload>
           <div class="upload-tip">
-            JPG, PNG. Kích thước: 1280x720px. Tối đa 5MB
+            Cho phép: JPG, PNG. Tối đa 5MB/ảnh
           </div>
         </el-form-item>
 
-        <!-- Video Upload -->
-        <el-form-item label="Video bài học" prop="videoUrl">
+        <!-- Upload video (videos) -->
+        <el-form-item label="Video" prop="videos" required>
           <el-upload
-              class="video-uploader"
-              :show-file-list="false"
+              v-model:file-list="newVideos"
+              list-type="text"
+              :auto-upload="false"
+              :on-change="handleVideoChange"
+              :on-remove="handleRemoveNewVideo"
               :before-upload="beforeVideoUpload"
-              :http-request="handleVideoUpload"
-              :disabled="uploading"
+              accept="video/mp4,video/mkv,video/avi"
+              multiple
           >
-            <div v-if="formData.videoUrl" class="video-preview">
-              <video :src="formData.videoUrl" controls style="width: 100%; max-width: 500px" />
-              <el-button
-                  type="danger"
-                  size="small"
-                  :icon="Delete"
-                  @click.stop="removeVideo"
-                  style="margin-top: 8px"
-              >
-                Xóa video
-              </el-button>
-            </div>
-            <el-button v-else :loading="uploading" :icon="Upload">
-              {{ uploading ? 'Đang upload...' : 'Click để upload video' }}
-            </el-button>
+            <el-button type="primary" icon="Plus">Chọn video</el-button>
           </el-upload>
           <div class="upload-tip">
-            MP4, AVI, MOV. Tối đa 500MB
+            Cho phép: MP4, MKV, AVI. Tối đa 500MB/video
           </div>
-          <el-progress
-              v-if="uploading"
-              :percentage="uploadProgress"
-              style="margin-top: 8px"
-          />
         </el-form-item>
 
-        <el-form-item label="Tiêu đề" prop="title" required>
-          <el-input v-model="formData.title" placeholder="Nhập tiêu đề bài học" />
-        </el-form-item>
-
-        <el-form-item label="Mô tả" prop="description">
+        <!-- Title -->
+        <el-form-item label="Tên bài học" prop="title" required>
           <el-input
-              v-model="formData.description"
-              type="textarea"
-              :rows="4"
-              placeholder="Nhập mô tả bài học"
+              v-model="formData.title"
+              placeholder="Nhập tên bài học (1-200 ký tự)"
+              maxlength="200"
+              show-word-limit
+              clearable
           />
         </el-form-item>
 
-        <el-form-item label="Thời lượng" prop="duration">
-          <el-input v-model="formData.duration" placeholder="VD: 15:30">
-            <template #append>phút:giây</template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item label="Thứ tự" prop="order">
+        <!-- Lesson Order -->
+        <el-form-item label="Thứ tự" prop="lessonOrder" required>
           <el-input-number
-              v-model="formData.order"
+              v-model="formData.lessonOrder"
               :min="1"
-              :step="1"
-              style="width: 150px"
+              :max="200"
+              placeholder="Nhập thứ tự bài học"
+              style="width: 200px"
           />
         </el-form-item>
 
-        <el-form-item label="Nội dung" prop="content">
-          <el-input
-              v-model="formData.content"
-              type="textarea"
-              :rows="8"
-              placeholder="Nhập nội dung chi tiết bài học"
-          />
-        </el-form-item>
-
+        <!-- Buttons -->
         <el-form-item>
-          <el-button
-              type="primary"
-              :loading="submitting"
-              @click="handleSubmit"
-          >
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">
             {{ isEdit ? 'Cập nhật' : 'Thêm mới' }}
           </el-button>
+          <el-button @click="handleReset">Làm mới</el-button>
           <el-button @click="handleBack">Hủy</el-button>
         </el-form-item>
       </el-form>
@@ -144,7 +93,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Back, Picture, Upload, Delete } from '@element-plus/icons-vue'
+import { Plus, Back } from '@element-plus/icons-vue'
+import axios from '../../api/axios.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -152,198 +102,177 @@ const formRef = ref()
 
 const isEdit = ref(false)
 const submitting = ref(false)
-const uploading = ref(false)
-const uploadProgress = ref(0)
 
-const courses = ref([
-  { id: 1, name: 'Lập trình Web với Vue 3' },
-  { id: 2, name: 'React Native cơ bản' }
-])
+// File uploads
+const newImages = ref([]) // images optional
+const newVideos = ref([]) // videos required
 
 const formData = reactive({
-  courseId: '',
   title: '',
-  description: '',
-  content: '',
-  duration: '',
-  order: 1,
-  thumbnail: '',
-  videoUrl: ''
+  lessonOrder: null
 })
 
-const rules = {
-  courseId: [
-    { required: true, message: 'Vui lòng chọn khóa học', trigger: 'change' }
-  ],
-  title: [
-    { required: true, message: 'Vui lòng nhập tiêu đề', trigger: 'blur' }
-  ]
+// Validation
+const validateTitle = (rule, value, callback) => {
+  if (!value || value.trim() === '') {
+    callback(new Error('Tên bài học không được để trống'))
+  } else if (value.length < 1 || value.length > 200) {
+    callback(new Error('Tên bài học phải từ 1 đến 200 ký tự'))
+  } else {
+    callback()
+  }
 }
 
-const beforeThumbnailUpload = (file) => {
-  const isImage = file.type.startsWith('image/')
-  const isLt5M = file.size / 1024 / 1024 < 5
+const validateLessonOrder = (rule, value, callback) => {
+  if (value === null || value === undefined) {
+    callback(new Error('Thứ tự bài học không được để trống'))
+  } else if (value < 1 || value > 200) {
+    callback(new Error('Thứ tự bài học từ 1 đến 200'))
+  } else {
+    callback()
+  }
+}
+const validateVideos = (rule, value, callback) => {
+  if (!newVideos.value || newVideos.value.length === 0) {
+    callback(new Error('Vui lòng chọn ít nhất 1 video'))
+  } else {
+    callback()
+  }
+}
 
+const rules = {
+  title: [{ required: true, validator: validateTitle, trigger: 'blur' }],
+  lessonOrder: [{ required: true, validator: validateLessonOrder, trigger: 'blur' }],
+  videos: [{ required: true,validator: validateVideos, trigger: 'change' }]
+}
+
+// File validation
+const beforeImageUpload = (file) => {
+  const isImage = ['image/jpeg','image/png','image/jpg'].includes(file.type)
+  const isLt5M = file.size / 1024 / 1024 < 5
   if (!isImage) {
-    ElMessage.error('Chỉ được upload file ảnh!')
+    ElMessage.error('File phải là JPG/PNG!')
     return false
   }
   if (!isLt5M) {
-    ElMessage.error('Kích thước ảnh không được vượt quá 5MB!')
+    ElMessage.error('Kích thước tối đa 5MB/ảnh')
     return false
   }
   return true
-}
-
-const handleThumbnailUpload = async (options) => {
-  const { file } = options
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    formData.thumbnail = e.target.result
-  }
-  reader.readAsDataURL(file)
 }
 
 const beforeVideoUpload = (file) => {
-  const isVideo = file.type.startsWith('video/')
+  const isVideo = ['video/mp4','video/mkv','video/avi'].includes(file.type)
   const isLt500M = file.size / 1024 / 1024 < 500
-
   if (!isVideo) {
-    ElMessage.error('Chỉ được upload file video!')
+    ElMessage.error('File phải là MP4/MKV/AVI!')
     return false
   }
   if (!isLt500M) {
-    ElMessage.error('Kích thước video không được vượt quá 500MB!')
+    ElMessage.error('Kích thước tối đa 500MB/video')
     return false
   }
   return true
 }
 
-const handleVideoUpload = async (options) => {
-  const { file } = options
+const handleImageChange = (file, fileList) => { newImages.value = fileList }
+const handleRemoveNewImage = (file, fileList) => { newImages.value = fileList }
+const handleVideoChange = (file, fileList) => { newVideos.value = fileList }
+const handleRemoveNewVideo = (file, fileList) => { newVideos.value = fileList }
 
-  uploading.value = true
-  uploadProgress.value = 0
-
-  try {
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      if (uploadProgress.value < 90) {
-        uploadProgress.value += 10
-      }
-    }, 300)
-
-    // TODO: Upload to server
-    // const formData = new FormData()
-    // formData.append('video', file)
-    // const response = await uploadAPI.uploadVideo(formData)
-
-    // Mock: Convert to blob URL for demo
-    await new Promise(resolve => setTimeout(resolve, 3000))
-
-    clearInterval(interval)
-    uploadProgress.value = 100
-
-    const videoUrl = URL.createObjectURL(file)
-    formData.videoUrl = videoUrl
-
-    ElMessage.success('Upload video thành công')
-  } catch (error) {
-    ElMessage.error('Lỗi upload video')
-  } finally {
-    uploading.value = false
-    uploadProgress.value = 0
-  }
-}
-
-const removeVideo = () => {
-  formData.videoUrl = ''
-}
-
+// Submit form
 const handleSubmit = async () => {
+  if (!formRef.value) return
+
   await formRef.value.validate(async (valid) => {
-    if (!valid) return
+    if (!valid) {
+      ElMessage.error('Vui lòng kiểm tra lại thông tin')
+      return
+    }
+
+    if (newVideos.value.length === 0) {
+      ElMessage.error('Vui lòng chọn ít nhất 1 video')
+      return
+    }
 
     submitting.value = true
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      ElMessage.success(isEdit.value ? 'Cập nhật thành công' : 'Thêm mới thành công')
-      router.push('/lessons')
+      const courseId = Number(route.query.courseId)
+      if (!courseId) {
+        ElMessage.error('Không xác định được khóa học')
+        return
+      }
+      const formDataToSend = new FormData()
+      formDataToSend.append('title', formData.title.trim())
+      formDataToSend.append('lessonOrder', formData.lessonOrder)
+
+      // Append images
+      newImages.value.forEach(file => {
+        if (file.raw) formDataToSend.append('images', file.raw)
+      })
+
+      // Append videos
+      newVideos.value.forEach(file => {
+        if (file.raw) formDataToSend.append('videos', file.raw)
+      })
+
+      // Call API
+      if (isEdit.value) {
+        await axios.put(`/lessons/${route.params.id}`, formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        ElMessage.success('Cập nhật bài học thành công')
+      } else {
+        await axios.post(`/lessons/${courseId}`, formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        ElMessage.success('Thêm bài học thành công')
+      }
+
+      router.push(`/courses/${courseId}/lessons`)
     } catch (error) {
-      ElMessage.error('Có lỗi xảy ra')
+      console.error('Submit error:', error)
+      ElMessage.error(error.response?.data?.message || 'Có lỗi xảy ra')
     } finally {
       submitting.value = false
     }
   })
 }
 
-const handleBack = () => router.back()
+const handleReset = () => {
+  formRef.value?.resetFields()
+  newImages.value = []
+  newVideos.value = []
+  ElMessage.info('Đã làm mới form')
+}
+
+const handleBack = () => { router.back() }
 
 onMounted(() => {
   if (route.params.id) {
     isEdit.value = true
-    // Fetch data here
-  }
-  if (route.query.courseId) {
-    formData.courseId = parseInt(route.query.courseId)
+    // Fetch lesson data for edit if cần (optional)
+    // fetchLessonData()
   }
 })
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .page-container {
-  max-width: 900px;
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-  }
-
-  .thumbnail-uploader,
-  .video-uploader {
-    :deep(.el-upload) {
-      border: 2px dashed var(--el-border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: var(--el-transition-duration-fast);
-
-      &:hover {
-        border-color: var(--el-color-primary);
-      }
-    }
-
-    .upload-placeholder {
-      width: 300px;
-      height: 180px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--el-text-color-secondary);
-
-      .upload-icon {
-        font-size: 40px;
-        margin-bottom: 8px;
-      }
-    }
-
-    .video-preview {
-      text-align: center;
-    }
-  }
-
-  .upload-tip {
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
+  padding: 16px;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.thumbnail-uploader-icon {
+  font-size: 28px;
+}
+.upload-tip {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
 }
 </style>

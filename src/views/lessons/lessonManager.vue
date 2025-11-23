@@ -15,7 +15,7 @@
           label-width="180px"
       >
         <!-- Search Student -->
-        <el-form-item v-if="!isEdit" label="Tìm kiếm học viên" required>
+        <el-form-item label="Tìm kiếm học viên" required>
           <el-card shadow="never" style="background: #f5f7fa; width: 100%">
             <el-form :inline="true" :model="studentSearchForm">
               <el-form-item label="Tên">
@@ -26,14 +26,14 @@
                     style="width: 200px"
                 />
               </el-form-item>
-<!--              <el-form-item label="Email">-->
-<!--                <el-input-->
-<!--                    v-model="studentSearchForm.email"-->
-<!--                    placeholder="Nhập email"-->
-<!--                    clearable-->
-<!--                    style="width: 200px"-->
-<!--                />-->
-<!--              </el-form-item>-->
+              <el-form-item label="Email">
+                <el-input
+                    v-model="studentSearchForm.email"
+                    placeholder="Nhập email"
+                    clearable
+                    style="width: 200px"
+                />
+              </el-form-item>
               <el-form-item>
                 <el-button type="primary" :icon="Search" @click="handleSearchStudent">
                   Tìm học viên
@@ -44,7 +44,7 @@
         </el-form-item>
 
         <!-- Select Student from search results -->
-        <el-form-item v-if="!isEdit" label="Chọn học viên" prop="studentId" required>
+        <el-form-item label="Chọn học viên" prop="studentId" required>
           <el-radio-group v-model="formData.studentId" style="width: 100%">
             <div v-if="searchedStudents.length === 0" class="empty-hint">
               <el-empty description="Vui lòng tìm kiếm học viên" :image-size="80" />
@@ -85,6 +85,14 @@
                     style="width: 200px"
                 />
               </el-form-item>
+              <el-form-item label="Mã">
+                <el-input
+                    v-model="courseSearchForm.code"
+                    placeholder="Nhập mã khóa học"
+                    clearable
+                    style="width: 150px"
+                />
+              </el-form-item>
               <el-form-item>
                 <el-button type="primary" :icon="Search" @click="handleSearchCourse">
                   Tìm khóa học
@@ -107,8 +115,7 @@
                 class="course-card"
                 :class="{ selected: formData.courseIds.includes(course.id) }"
             >
-              <!-- Nếu là edit, những course cũ đã đăng ký không disable, course mới thì bình thường -->
-              <el-checkbox :label="course.id" :disabled="isEdit && course.isEnrolled">
+              <el-checkbox :label="course.id" :disabled="course.isEnrolled">
                 <div class="course-content">
                   <el-image
                       :src="course.thumbnail"
@@ -130,7 +137,6 @@
             </el-card>
           </el-checkbox-group>
         </el-form-item>
-
 
         <!-- Selected Summary -->
         <el-form-item v-if="formData.studentId && formData.courseIds.length > 0" label="Tóm tắt">
@@ -156,7 +162,7 @@
               :disabled="!formData.studentId || formData.courseIds.length === 0"
               @click="handleSubmit"
           >
-            {{ isEdit ? 'Cập nhật' : 'Đăng ký' }} {{ formData.courseIds.length }} khóa học
+            Đăng ký {{ formData.courseIds.length }} khóa học
           </el-button>
           <el-button @click="handleBack">Hủy</el-button>
         </el-form-item>
@@ -166,19 +172,15 @@
 </template>
 
 <script setup>
-import {computed, reactive, ref} from 'vue'
-import {useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {Back, Search} from '@element-plus/icons-vue'
+import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Back, Search } from '@element-plus/icons-vue'
 import axios from '../../api/axios.js'
-import { onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 
-const route = useRoute()
 const router = useRouter()
 const formRef = ref()
 const submitting = ref(false)
-const studentId = route.query.studentId
 
 // Search forms
 const studentSearchForm = reactive({
@@ -186,8 +188,6 @@ const studentSearchForm = reactive({
   email: '',
   status: 'ACTIVE' // Mặc định ACTIVE
 })
-
-const isEdit = computed(() => !!route.params.id);
 
 const courseSearchForm = reactive({
   name: '',
@@ -214,6 +214,7 @@ const rules = {
     { required: true, type: 'array', min: 1, message: 'Vui lòng chọn ít nhất một khóa học', trigger: 'change' }
   ]
 }
+
 // Computed
 const selectedStudentName = computed(() => {
   const student = searchedStudents.value.find(s => s.id === formData.studentId)
@@ -236,17 +237,19 @@ const handleSearchStudent = async () => {
     const params = {
       name: studentSearchForm.name || undefined,
       email: studentSearchForm.email || undefined,
-      status: studentSearchForm.status = 'ACTIVE'
+      status: studentSearchForm.status
     }
 
-    const response = await axios.get('/students', { params })
-    searchedStudents.value = response.data.content
+    const response = await axios.get('/students/search', { params })
+    searchedStudents.value = response.data
+
     if (searchedStudents.value.length === 0) {
       ElMessage.info('Không tìm thấy học viên nào')
     } else {
       ElMessage.success(`Tìm thấy ${searchedStudents.value.length} học viên`)
     }
 
+    // Reset selected student if not in new results
     if (formData.studentId && !searchedStudents.value.find(s => s.id === formData.studentId)) {
       formData.studentId = null
     }
@@ -267,12 +270,26 @@ const handleSearchCourse = async () => {
     const params = {
       name: courseSearchForm.name || undefined,
       code: courseSearchForm.code || undefined,
-      status: courseSearchForm.status || 'ACTIVE'
+      status: courseSearchForm.status
     }
 
-    const response = await axios.get('/courses', { params })
+    const response = await axios.get('/courses/search', { params })
 
-    searchedCourses.value = response.data.content || response.data
+    // Check enrolled courses for selected student
+    if (formData.studentId) {
+      const enrolledResponse = await axios.get(`/students/${formData.studentId}/enrolled-courses`)
+      const enrolledCourseIds = enrolledResponse.data.map(c => c.id)
+
+      searchedCourses.value = response.data.map(course => ({
+        ...course,
+        isEnrolled: enrolledCourseIds.includes(course.id)
+      }))
+    } else {
+      searchedCourses.value = response.data.map(course => ({
+        ...course,
+        isEnrolled: false
+      }))
+    }
 
     if (searchedCourses.value.length === 0) {
       ElMessage.info('Không tìm thấy khóa học nào')
@@ -280,7 +297,7 @@ const handleSearchCourse = async () => {
       ElMessage.success(`Tìm thấy ${searchedCourses.value.length} khóa học`)
     }
 
-    // Nếu trước đó đã chọn courseIds, lọc lại cho khớp với kết quả mới
+    // Reset selected courses if they're not in new results
     formData.courseIds = formData.courseIds.filter(id =>
         searchedCourses.value.find(c => c.id === id)
     )
@@ -290,7 +307,7 @@ const handleSearchCourse = async () => {
   }
 }
 
-
+// Submit
 const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (!valid) {
@@ -303,66 +320,36 @@ const handleSubmit = async () => {
     try {
       const payload = {
         studentId: formData.studentId,
-        courseIds: formData.courseIds,
+        courseIds: formData.courseIds, // Array of course IDs
         note: formData.note || undefined
       }
 
-      if (isEdit.value) {
-        // Nếu đang edit, gọi PUT
-        await axios.put(`/enrollments/${route.params.id}`, payload)
-        ElMessage.success(`Cập nhật thành công ${formData.courseIds.length} khóa học`)
-      } else {
-        // Nếu đang tạo mới, gọi POST
-        await axios.post('/enrollments', payload)
-        ElMessage.success(`Đăng ký thành công ${formData.courseIds.length} khóa học cho học viên ${selectedStudentName.value}`)
-      }
+      console.log('=== ENROLLMENT PAYLOAD ===')
+      console.log('Student ID:', payload.studentId)
+      console.log('Course IDs:', payload.courseIds)
+      console.log('Note:', payload.note)
 
+      // Call API
+      await axios.post('/enrollments', payload)
+
+      ElMessage.success(`Đăng ký thành công ${formData.courseIds.length} khóa học cho học viên ${selectedStudentName.value}`)
       router.push('/enrollments')
     } catch (error) {
       console.error('Submit error:', error)
       if (error.response?.data?.message) {
         ElMessage.error(error.response.data.message)
       } else {
-        ElMessage.error('Có lỗi xảy ra khi lưu dữ liệu')
+        ElMessage.error('Có lỗi xảy ra khi đăng ký')
       }
     } finally {
       submitting.value = false
     }
   })
 }
+
 const handleBack = () => {
   router.back()
 }
-const fetchData = async () => {
-  const enrollmentId = route.params.id
-  const studentId = route.query.studentId
-  if (!enrollmentId || !studentId) return
-
-  try {
-    // Lấy danh sách enrollment
-    const response = await axios.get(`/enrollments/student/${studentId}`)
-    const data = response.data
-
-    // Lấy danh sách courseId từ content
-    formData.courseIds = data.content.map(e => e.course.id)
-
-    // Lấy thông tin course để hiển thị trong form
-    searchedCourses.value = data.content.map(e => e.course)
-
-    // studentId cố định (khóa lại form nếu là edit)
-    formData.studentId = studentId
-
-    isEdit.value = true
-  } catch (error) {
-    console.error('Fetch enrollment error:', error)
-    ElMessage.error('Không tải được dữ liệu')
-  }
-}
-
-onMounted(() => {
-  fetchData()
-})
-
 </script>
 
 <style scoped lang="scss">

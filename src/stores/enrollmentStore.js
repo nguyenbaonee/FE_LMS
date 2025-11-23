@@ -1,4 +1,3 @@
-// stores/enrollmentStore.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '../api/axios.js'
@@ -41,12 +40,12 @@ export const useEnrollmentStore = defineStore('enrollment', () => {
         }
     }
 
-    // Lấy danh sách student theo courseId, có paging
-    const fetchStudentsOfCourse = async (courseId, page = 1, pageSize = 5) => {
+    const fetchStudentsOfCourse = async ({ courseId, status, page = 1, pageSize = 5 }) => {
         loading.value = true
         try {
             const res = await apiClient.get(`/enrollments/${courseId}`, {
                 params: {
+                    status,
                     page: page - 1,
                     size: pageSize
                 }

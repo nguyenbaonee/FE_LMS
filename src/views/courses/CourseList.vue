@@ -69,7 +69,6 @@
             fit="cover"
             style="width: 80px; height: 50px; border-radius: 4px"
             />
-
           </template>
         </el-table-column>
 
@@ -83,11 +82,6 @@
         <el-table-column label="Mô tả" width="200" align="right">
           <template #default="{ row }">
             {{ row.description }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Học viên" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag type="success">{{ row.studentCount }}</el-tag>
           </template>
         </el-table-column>
 
@@ -110,7 +104,7 @@
         <el-table-column label="Thao tác" width="220" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="info" size="small" link @click="viewStudents(row)">
-              Học viên
+              Xem Học viên
             </el-button>
             <el-button type="warning" size="small" :icon="Edit" link @click="handleEdit(row)">
               Sửa
@@ -221,7 +215,7 @@ const handleEdit = (row) => {
 
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm(`Bạn có chắc muốn xóa khóa học "${row.name}"?`, 'Xác nhận', {
+    await ElMessageBox.confirm(`Xóa khóa học sẽ mất các bài học, ẻnollment vẫn giữ lịch sử, xác nhận? "${row.name}"?`, 'Xác nhận', {
       type: 'warning'
     })
     await courseStore.deleteCourse(row.id)
@@ -231,16 +225,18 @@ const handleDelete = async (row) => {
   }
 }
 
-const viewLessons = (row) => {
+const viewStudents = (row) => {
   router.push({
-    path: `/courses/${row.id}/lessons`,
-    query: { status: row.status, name: row.name } // gửi tên luôn
+    path: `/students`,
+    query: { status: row.status, courseId: row.id,courseName: row.name }
   });
 };
 
-
-const viewStudents = (row) => {
-  console.log('View students of course', row)
+const viewLessons = (row) => {
+  router.push({
+    path: `/courses/${row.id}/lessons`,
+    query: { status: row.status, name: row.name }
+  });
 }
 
 const handleExport = () => {

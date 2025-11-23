@@ -5,13 +5,20 @@
       <div class="header-content">
         <div class="header-left">
           <h2 class="page-title">Quản lý học viên</h2>
-          <el-tag type="info" class="tag-large">Tổng: {{ total }} học viên</el-tag>
+          <el-tag v-if="isByCourse" type="warning" class="tag-large">
+            Theo khóa học: {{ route.query.courseName || 'Không rõ' }}
+          </el-tag>
+
+          <el-tag type="info" class="tag-large">
+            Tổng: {{ total }} học viên
+          </el-tag>
         </div>
+
         <div class="header-right">
           <el-button type="success" :icon="Download" @click="handleExport">
             Xuất theo tìm kiếm
           </el-button>
-          <el-button type="success" :icon="Download" @click="handleExportAll">
+          <el-button v-if="!isByCourse" type="success" :icon="Download" @click="handleExportAll">
             Xuất tất cả
           </el-button>
           <el-button type="primary" :icon="Plus" @click="handleCreate">
@@ -155,7 +162,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed} from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute,useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {useStudentStore} from "../../stores/studentStore.js";
 import {
@@ -169,11 +176,14 @@ import {
 } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
 import apiClient from "../../api/axios.js";
+import {useEnrollmentStore} from "../../stores/enrollmentStore.js";
 
 const router = useRouter()
+const route = useRoute()
 
 const studentStore = useStudentStore()
-
+const enrollmentStore = useEnrollmentStore()
+const isByCourse = ref(false)
 const searchForm = reactive({
   name: null,
   email: null,
@@ -196,22 +206,37 @@ const handleSizeChange = (size) => {
   pagination.page = 1
   fetchData()
 }
-const tableData = computed(() => studentStore.students)
-const loading = computed(() => studentStore.loading)
-const total = computed(() => studentStore.total)
+const tableData = computed(() => {
+  if (route.query.courseId) return enrollmentStore.studentsOfCourse
+  return studentStore.students
+})
+const loading = computed(() => {
+  return isByCourse.value ? enrollmentStore.loading : studentStore.loading
+})
 
+const total = computed(() => {
+  return isByCourse.value ? enrollmentStore.total : studentStore.total
+})
 
 const fetchData = () => {
-  const statusStr = searchForm.status === 1 ? 'ACTIVE' : searchForm.status === 0 ? 'DELETED' : 'ACTIVE'
-  studentStore.fetchStudents({
-    name: searchForm.name,
-    email: searchForm.email,
-    status: statusStr,
-    page: pagination.page,
-    pageSize: pagination.pageSize
-  })
+  if (route.query.courseId) {
+    isByCourse.value = true
+    enrollmentStore.fetchStudentsOfCourse({
+      courseId: route.query.courseId,
+      status: route.query.status
+    })
+  } else {
+    isByCourse.value = false
+    const statusStr = searchForm.status === 1 ? 'ACTIVE' : searchForm.status === 0 ? 'DELETED' : 'ACTIVE'
+    studentStore.fetchStudents({
+      name: searchForm.name,
+      email: searchForm.email,
+      status: statusStr,
+      page: pagination.page,
+      pageSize: pagination.pageSize
+    })
+  }
 }
-
 
 const handleSearch = async () => {
   pagination.page = 1

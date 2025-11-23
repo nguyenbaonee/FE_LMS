@@ -5,7 +5,7 @@
       <div class="logo">
         <el-icon :size="28" color="#667eea"><Reading /></el-icon>
         <transition name="fade">
-          <span v-show="!collapsed" class="logo-text">LMS Mini</span>
+          <span v-show="!collapsed" class="logo-text">{{ $t('sidebar.logo') }}</span>
         </transition>
       </div>
     </div>
@@ -19,22 +19,22 @@
     >
       <el-menu-item index="/dashboard">
         <el-icon><Odometer /></el-icon>
-        <template #title>Dashboard</template>
+        <template #title>{{ $t('sidebar.dashboard') }}</template>
       </el-menu-item>
 
       <el-menu-item index="/students">
         <el-icon><UserFilled /></el-icon>
-        <template #title>Quản lý học viên</template>
+        <template #title>{{ $t('sidebar.students') }}</template>
       </el-menu-item>
 
       <el-menu-item index="/courses">
         <el-icon><Reading /></el-icon>
-        <template #title>Quản lý khóa học</template>
+        <template #title>{{ $t('sidebar.courses') }}</template>
       </el-menu-item>
 
       <el-menu-item index="/enrollments">
         <el-icon><Tickets /></el-icon>
-        <template #title>Đăng ký học</template>
+        <template #title>{{ $t('sidebar.enrollments') }}</template>
       </el-menu-item>
     </el-menu>
   </div>

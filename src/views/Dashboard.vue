@@ -1,175 +1,174 @@
 <template>
-  <div class="dashboard">
-    <!-- Welcome Section -->
-    <el-card shadow="never" class="welcome-card">
-      <div class="welcome-content">
-        <div class="welcome-text">
-          <h1 class="welcome-title">EduNovel - NguyenBao </h1>
-          <p class="welcome-desc">Hệ thống quản lý khóa học</p>
+    <div class="dashboard">
+      <!-- Welcome Section -->
+      <el-card shadow="never" class="welcome-card">
+        <div class="welcome-content">
+          <div class="welcome-text">
+            <h1 class="welcome-title">{{ $t('dashboard.welcomeTitle') }}</h1>
+            <p class="welcome-desc">{{ $t('dashboard.welcomeDesc') }}</p>
+          </div>
+          <div class="welcome-actions">
+            <el-button type="primary" :icon="Plus" size="large" @click="router.push('/students/create')">
+              {{ $t('dashboard.addStudent') }}
+            </el-button>
+            <el-button type="success" :icon="Reading" size="large" @click="router.push('/courses/create')">
+              {{ $t('dashboard.addCourse') }}
+            </el-button>
+          </div>
         </div>
-        <div class="welcome-actions">
-          <el-button type="primary" :icon="Plus" size="large" @click="router.push('/students/create')">
-            Thêm học viên
-          </el-button>
-          <el-button type="success" :icon="Reading" size="large" @click="router.push('/courses/create')">
-            Thêm khóa học
-          </el-button>
-        </div>
-      </div>
-    </el-card>
+      </el-card>
 
-    <!-- Statistics Cards -->
-    <el-row :gutter="20" style="margin-top: 20px">
-      <el-col :xs="24" :sm="12" :lg="6" v-for="stat in stats" :key="stat.title">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-info">
-              <div class="stat-title">{{ stat.title }}</div>
-              <div class="stat-value">{{ stat.value }}</div>
-              <div class="stat-change" :class="stat.changeType">
-                <el-icon>
-                  <component :is="stat.changeType === 'increase' ? TrendCharts : Bottom" />
+      <!-- Statistics Cards -->
+      <el-row :gutter="20" style="margin-top: 20px">
+        <el-col :xs="24" :sm="12" :lg="6" v-for="stat in stats" :key="stat.title">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-title">{{ stat.title }}</div>
+                <div class="stat-value">{{ stat.value }}</div>
+                <div class="stat-change" :class="stat.changeType">
+                  <el-icon>
+                    <component :is="stat.changeType === 'increase' ? TrendCharts : Bottom" />
+                  </el-icon>
+                  <span>{{ stat.change }}</span>
+                </div>
+              </div>
+              <div class="stat-icon" :style="{ background: stat.color }">
+                <el-icon :size="36">
+                  <component :is="stat.icon" />
                 </el-icon>
-                <span>{{ stat.change }}</span>
               </div>
             </div>
-            <div class="stat-icon" :style="{ background: stat.color }">
-              <el-icon :size="36">
-                <component :is="stat.icon" />
-              </el-icon>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
 
-    <!-- Quick Overview -->
-    <el-row :gutter="20" style="margin-top: 20px">
-      <!-- Recent Activities -->
-      <el-col :xs="24" :lg="14">
-        <el-card shadow="never">
-          <template #header>
-            <div class="card-header">
+      <!-- Quick Overview -->
+      <el-row :gutter="20" style="margin-top: 20px">
+        <!-- Recent Activities -->
+        <el-col :xs="24" :lg="14">
+          <el-card shadow="never">
+            <template #header>
+              <div class="card-header">
               <span class="card-title">
                 <el-icon><Clock /></el-icon>
-                Hoạt động gần đây
+                {{ $t('dashboard.recentActivities') }}
               </span>
-              <el-button text type="primary" @click="router.push('/enrollments')">
-                Xem tất cả
-              </el-button>
-            </div>
-          </template>
-
-          <el-timeline>
-            <el-timeline-item
-                v-for="activity in recentActivities"
-                :key="activity.id"
-                :timestamp="activity.time"
-                :type="activity.type"
-                :icon="activity.icon"
-            >
-              <div class="activity-content">
-                <strong>{{ activity.title }}</strong>
-                <p>{{ activity.description }}</p>
+                <el-button text type="primary" @click="router.push('/enrollments')">
+                  {{ $t('dashboard.viewAll') }}
+                </el-button>
               </div>
-            </el-timeline-item>
-          </el-timeline>
-        </el-card>
-      </el-col>
+            </template>
 
-      <!-- Quick Links -->
-      <el-col :xs="24" :lg="10">
-        <el-card shadow="never">
-          <template #header>
+            <el-timeline>
+              <el-timeline-item
+                  v-for="activity in recentActivities"
+                  :key="activity.id"
+                  :timestamp="activity.time"
+                  :type="activity.type"
+                  :icon="activity.icon"
+              >
+                <div class="activity-content">
+                  <strong>{{ activity.title }}</strong>
+                  <p>{{ activity.description }}</p>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
+          </el-card>
+        </el-col>
+
+        <!-- Quick Links -->
+        <el-col :xs="24" :lg="10">
+          <el-card shadow="never">
+            <template #header>
             <span class="card-title">
               <el-icon><Link /></el-icon>
-              Truy cập nhanh
+              {{ $t('dashboard.quickAccess') }}
             </span>
-          </template>
+            </template>
 
-          <div class="quick-links">
-            <el-button
-                class="quick-link-btn"
-                @click="router.push('/students')"
-            >
-              <el-icon><UserFilled /></el-icon>
-              <div class="quick-link-content">
-                <span class="quick-link-title">Quản lý học viên</span>
-                <span class="quick-link-count">{{ stats[0].value }} học viên</span>
-              </div>
-              <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-            </el-button>
+            <div class="quick-links">
+              <el-button
+                  class="quick-link-btn"
+                  @click="router.push('/students')"
+              >
+                <el-icon><UserFilled /></el-icon>
+                <div class="quick-link-content">
+                  <span class="quick-link-title">{{ $t('dashboard.manageStudents') }}</span>
+                  <span class="quick-link-count">{{ stats[0].value }} {{ $t('dashboard.students') }}</span>
+                </div>
+                <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+              </el-button>
 
-            <el-button
-                class="quick-link-btn"
-                @click="router.push('/courses')"
-            >
-              <el-icon><Reading /></el-icon>
-              <div class="quick-link-content">
-                <span class="quick-link-title">Quản lý khóa học</span>
-                <span class="quick-link-count">{{ stats[1].value }} khóa học</span>
-              </div>
-              <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-            </el-button>
+              <el-button
+                  class="quick-link-btn"
+                  @click="router.push('/courses')"
+              >
+                <el-icon><Reading /></el-icon>
+                <div class="quick-link-content">
+                  <span class="quick-link-title">{{ $t('dashboard.manageCourses') }}</span>
+                  <span class="quick-link-count">{{ stats[1].value }} {{ $t('dashboard.courses') }}</span>
+                </div>
+                <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+              </el-button>
 
-            <el-button
-                class="quick-link-btn"
-                @click="router.push('/lessons')"
-            >
-              <el-icon><Document /></el-icon>
-              <div class="quick-link-content">
-                <span class="quick-link-title">Quản lý bài học</span>
-                <span class="quick-link-count">{{ stats[2].value }} bài học</span>
-              </div>
-              <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-            </el-button>
+              <el-button
+                  class="quick-link-btn"
+                  @click="router.push('/lessons')"
+              >
+                <el-icon><Document /></el-icon>
+                <div class="quick-link-content">
+                  <span class="quick-link-title">{{ $t('dashboard.manageLessons') }}</span>
+                  <span class="quick-link-count">{{ stats[2].value }} {{ $t('dashboard.lessons') }}</span>
+                </div>
+                <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+              </el-button>
 
-            <el-button
-                class="quick-link-btn"
-                @click="router.push('/enrollments')"
-            >
-              <el-icon><Tickets /></el-icon>
-              <div class="quick-link-content">
-                <span class="quick-link-title">Đăng ký học</span>
-                <span class="quick-link-count">{{ stats[3].value }} đăng ký</span>
-              </div>
-              <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+              <el-button
+                  class="quick-link-btn"
+                  @click="router.push('/enrollments')"
+              >
+                <el-icon><Tickets /></el-icon>
+                <div class="quick-link-content">
+                  <span class="quick-link-title">{{ $t('dashboard.enrollments') }}</span>
+                  <span class="quick-link-count">{{ stats[3].value }} {{ $t('dashboard.enrollments') }}</span>
+                </div>
+                <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
 
-    <!-- Charts Section -->
-    <el-row :gutter="20" style="margin-top: 20px">
-      <el-col :xs="24">
-        <el-card shadow="never">
-          <template #header>
-            <div class="card-header">
+      <!-- Charts Section -->
+      <el-row :gutter="20" style="margin-top: 20px">
+        <el-col :xs="24">
+          <el-card shadow="never">
+            <template #header>
+              <div class="card-header">
               <span class="card-title">
                 <el-icon><TrendCharts /></el-icon>
-                Thống kê tổng quan
+                {{ $t('dashboard.overviewStats') }}
               </span>
-              <el-radio-group v-model="chartPeriod" size="small">
-                <el-radio-button label="week">Tuần</el-radio-button>
-                <el-radio-button label="month">Tháng</el-radio-button>
-                <el-radio-button label="year">Năm</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
+                <el-radio-group v-model="chartPeriod" size="small">
+                  <el-radio-button label="week">{{ $t('dashboard.periodWeek') }}</el-radio-button>
+                  <el-radio-button label="month">{{ $t('dashboard.periodMonth') }}</el-radio-button>
+                  <el-radio-button label="year">{{ $t('dashboard.periodYear') }}</el-radio-button>
+                </el-radio-group>
+              </div>
+            </template>
 
-          <div class="chart-container">
-            <div class="chart-placeholder">
-              <el-icon :size="60" color="#909399"><TrendCharts /></el-icon>
-              <p style="margin-top: 16px; color: #909399">
-              </p>
+            <div class="chart-container">
+              <div class="chart-placeholder">
+                <el-icon :size="60" color="#909399"><TrendCharts /></el-icon>
+                <p style="margin-top: 16px; color: #909399"></p>
+              </div>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-  </div>
-</template>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
+  </template>
 
 <script setup>
 import { ref } from 'vue'

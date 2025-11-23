@@ -1,7 +1,7 @@
-
 <template>
   <div class="navbar">
     <div class="navbar-left">
+      <!-- Nút toggle sidebar -->
       <el-button
           circle
           @click="emit('toggle-sidebar')"
@@ -10,8 +10,27 @@
         <el-icon><Expand /></el-icon>
       </el-button>
 
+      <!-- Nút chuyển ngôn ngữ -->
+      <div class="lang-switcher">
+        <el-button
+            :type="locale.value === 'vi' ? 'primary' : 'default'"
+            size="small"
+            @click="switchLang('vi')"
+        >
+          VI
+        </el-button>
+        <el-button
+            :type="locale.value === 'en' ? 'primary' : 'default'"
+            size="small"
+            @click="switchLang('en')"
+        >
+          EN
+        </el-button>
+      </div>
+
+      <!-- Breadcrumb -->
       <el-breadcrumb separator="/" class="breadcrumb">
-        <el-breadcrumb-item :to="{ path: '/' }">Trang chủ</el-breadcrumb-item>
+        <el-breadcrumb-item :to="{ path: '/' }">{{ $t('nav.home') }}</el-breadcrumb-item>
         <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path">
           {{ item.name }}
         </el-breadcrumb-item>
@@ -19,10 +38,10 @@
     </div>
 
     <div class="navbar-right">
-
+      <!-- Dropdown thông tin user -->
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-info">
-          <el-avatar :src="userAvatar" :size="36">Admin</el-avatar>
+          <el-avatar :src="userAvatar" :size="36">{{ userName }}</el-avatar>
           <span class="user-name">{{ userName }}</span>
           <el-icon><ArrowDown /></el-icon>
         </div>
@@ -30,7 +49,15 @@
           <el-dropdown-menu>
             <el-dropdown-item command="profile">
               <el-icon><User /></el-icon>
-              Thông tin cá nhân
+              {{ $t('nav.profile') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="settings">
+              <el-icon><User /></el-icon>
+              {{ $t('nav.settings') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="logout">
+              <el-icon><ArrowDown /></el-icon>
+              {{ $t('nav.logout') }}
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -38,48 +65,55 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import {
-  Expand,
-  User,
-  ArrowDown
-} from '@element-plus/icons-vue'
+    import { ref, computed } from 'vue'
+    import { useRouter, useRoute } from 'vue-router'
+    import { ElMessage } from 'element-plus'
+    import { Expand, User, ArrowDown } from '@element-plus/icons-vue'
+    import { useI18n } from 'vue-i18n'
+    import { useLocaleStore } from '../stores/useLocaleStore'
+    import axios from 'axios'
 
-const emit = defineEmits(['toggle-sidebar'])
-const router = useRouter()
-const route = useRoute()
-const userName = ref('Admin User')
-const userAvatar = ref('https://i.pravatar.cc/150?img=8')
+    const localeStore = useLocaleStore()
+    const { locale } = useI18n()
 
-const breadcrumbs = computed(() => {
-  const matched = route.matched.filter(item => item.meta?.title)
-  return matched.map(item => ({
-    name: item.meta.title,
-    path: item.path
-  }))
-})
+    const switchLang = (lang) => {
+      locale.value = lang
+      localeStore.setLocale(lang)
+      axios.defaults.headers['Accept-Language'] = lang
+    }
 
+    const currentLangLabel = computed(() => (locale.value === 'vi' ? 'VI' : 'EN'))
 
-const handleCommand = (command) => {
-  switch (command) {
-    case 'profile':
-      router.push('/profile')
-      break
-    case 'settings':
-      router.push('/settings')
-      break
-    case 'logout':
-      ElMessage.success('Đăng xuất thành công')
-      router.push('/login')
-      break
-  }
-}
-</script>
+    const emit = defineEmits(['toggle-sidebar'])
+    const router = useRouter()
+    const route = useRoute()
+    const userName = ref('Admin User')
+    const userAvatar = ref('https://i.pravatar.cc/150?img=8')
 
+    const breadcrumbs = computed(() => {
+      const matched = route.matched.filter(item => item.meta?.title)
+      return matched.map(item => ({
+        name: item.meta.title,
+        path: item.path
+      }))
+    })
+
+    const handleCommand = (command) => {
+      switch (command) {
+        case 'profile':
+          router.push('/profile')
+          break
+        case 'settings':
+          router.push('/settings')
+          break
+        case 'logout':
+          ElMessage.success($t('nav.logout')) // i18n
+          router.push('/login')
+          break
+      }
+    }
+  </script>
 <style scoped lang="scss">
 .navbar {
   height: 64px;

@@ -1,23 +1,24 @@
 <template>
-  <div class="footer">
-    <div class="footer-content">
-      <div class="footer-left">
+    <div class="footer">
+      <div class="footer-content">
+        <div class="footer-left">
         <span class="copyright">
-          © 2025 LMS Mini. All rights reserved.
+          {{ $t('footer.copyright') }}
         </span>
-        <el-divider direction="vertical" />
-        <span class="version">Version 1.0.0</span>
-      </div>
+          <el-divider direction="vertical" />
+          <span class="version">{{ $t('footer.version') }}</span>
+        </div>
 
-      <div class="footer-right">
-        <el-link href="#" :underline="false">Điều khoản sử dụng</el-link>
-        <el-divider direction="vertical" />
-        <el-link href="#" :underline="false">Chính sách bảo mật</el-link>
-        <el-divider direction="vertical" />
-        <el-link href="#" :underline="false">Hỗ trợ</el-link>
+        <div class="footer-right">
+          <el-link href="#" :underline="false">{{ $t('footer.terms') }}</el-link>
+          <el-divider direction="vertical" />
+          <el-link href="#" :underline="false">{{ $t('footer.privacy') }}</el-link>
+          <el-divider direction="vertical" />
+          <el-link href="#" :underline="false">{{ $t('footer.support') }}</el-link>
+        </div>
       </div>
     </div>
-  </div>
+
 </template>
 
 <script setup>

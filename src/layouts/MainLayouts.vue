@@ -1,14 +1,21 @@
 <template>
   <el-container class="main-layout">
+    <!-- Sidebar -->
     <el-aside :width="sidebarWidth" class="sidebar-container">
-      <Sidebar :collapsed="isCollapsed" @toggle="toggleSidebar" />
+      <Sidebar
+          :collapsed="isCollapsed"
+          @toggle="toggleSidebar"
+      />
     </el-aside>
 
+    <!-- Main content -->
     <el-container>
+      <!-- Header / Navbar -->
       <el-header height="64px" class="header-container">
         <Navbar @toggle-sidebar="toggleSidebar" />
       </el-header>
 
+      <!-- Router view -->
       <el-main class="main-content">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -17,6 +24,7 @@
         </router-view>
       </el-main>
 
+      <!-- Footer -->
       <el-footer height="auto" class="footer-container">
         <Footer />
       </el-footer>

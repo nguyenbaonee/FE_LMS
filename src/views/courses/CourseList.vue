@@ -9,6 +9,9 @@
           <el-button type="success" :icon="Download" @click="handleExport">
             Xuất Excel
           </el-button>
+          <el-button type="success" :icon="Download" @click="handleExportAll">
+            Xuất tất cả
+          </el-button>
           <el-button type="primary" :icon="Plus" @click="handleCreate">
             Thêm khóa học
           </el-button>
@@ -149,6 +152,7 @@ import {
   Delete
 } from '@element-plus/icons-vue'
 import * as XLSX from "xlsx";
+import axios from '../../api/axios.js'
 
 const courseStore = useCourseStore()
 const router = useRouter()
@@ -157,6 +161,37 @@ const searchForm = reactive({
   code: null,
   status: 'ACTIVE'
 })
+const handleExportAll = async () => {
+  try {
+    const params = {
+      name: searchForm.name || undefined,
+      code: searchForm.code || undefined,
+      status: searchForm.status || undefined
+    }
+
+    const res = await axios.get('/courses/export', {
+      params,
+      responseType: 'blob'
+    })
+
+    const filename = `course_report_${Date.now()}.xlsx`
+    const url = window.URL.createObjectURL(res.data)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('Xuất Excel khóa học thành công')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('Lỗi xuất Excel')
+  }
+}
+
 
 const pagination = reactive({
   page: 1,

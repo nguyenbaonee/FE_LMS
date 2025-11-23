@@ -331,7 +331,6 @@ const handleExportAll = async () => {
   } catch (error) {
     console.error(error)
     if (error.response && error.response.data) {
-      // có thể backend trả lỗi JSON dạng AppException
       const reader = new FileReader()
       reader.onload = () => {
         const msg = reader.result

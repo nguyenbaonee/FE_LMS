@@ -3,8 +3,8 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <h3>{{ isEdit ? 'Cập nhật' : 'Thêm' }} bài học</h3>
-          <el-button :icon="Back" @click="handleBack">Quay lại</el-button>
+          <h3>{{ isEdit ? $t('lessonForm.header.update') : $t('lessonForm.header.add') }}</h3>
+          <el-button :icon="Back" @click="handleBack">{{ $t('lessonForm.header.back') }}</el-button>
         </div>
       </template>
 
@@ -15,8 +15,8 @@
           label-width="180px"
           label-position="left"
       >
-        <!-- Upload hình ảnh (images) -->
-        <el-form-item label="Hình ảnh" prop="images">
+        <!-- Upload hình ảnh -->
+        <el-form-item :label="$t('lessonForm.images.label')" prop="images">
           <el-upload
               v-model:file-list="newImages"
               list-type="picture-card"
@@ -30,13 +30,11 @@
               <Plus />
             </el-icon>
           </el-upload>
-          <div class="upload-tip">
-            Cho phép: JPG, PNG. Tối đa 5MB/ảnh
-          </div>
+          <div class="upload-tip">{{ $t('lessonForm.images.tip') }}</div>
         </el-form-item>
 
-        <!-- Upload video (videos) -->
-        <el-form-item label="Video" prop="videos" required>
+        <!-- Upload video -->
+        <el-form-item :label="$t('lessonForm.videos.label')" prop="videos" required>
           <el-upload
               v-model:file-list="newVideos"
               list-type="text"
@@ -47,18 +45,16 @@
               accept="video/mp4,video/mkv,video/avi"
               multiple
           >
-            <el-button type="primary" icon="Plus">Chọn video</el-button>
+            <el-button type="primary" icon="Plus">{{ $t('lessonForm.videos.select') }}</el-button>
           </el-upload>
-          <div class="upload-tip">
-            Cho phép: MP4, MKV, AVI. Tối đa 500MB/video
-          </div>
+          <div class="upload-tip">{{ $t('lessonForm.videos.tip') }}</div>
         </el-form-item>
 
         <!-- Title -->
-        <el-form-item label="Tên bài học" prop="title" required>
+        <el-form-item :label="$t('lessonForm.title.label')" prop="title" required>
           <el-input
               v-model="formData.title"
-              placeholder="Nhập tên bài học (1-200 ký tự)"
+              :placeholder="$t('lessonForm.title.placeholder')"
               maxlength="200"
               show-word-limit
               clearable
@@ -66,12 +62,12 @@
         </el-form-item>
 
         <!-- Lesson Order -->
-        <el-form-item label="Thứ tự" prop="lessonOrder" required>
+        <el-form-item :label="$t('lessonForm.order.label')" prop="lessonOrder" required>
           <el-input-number
               v-model="formData.lessonOrder"
               :min="1"
               :max="200"
-              placeholder="Nhập thứ tự bài học"
+              :placeholder="$t('lessonForm.order.placeholder')"
               style="width: 200px"
           />
         </el-form-item>
@@ -79,15 +75,16 @@
         <!-- Buttons -->
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">
-            {{ isEdit ? 'Cập nhật' : 'Thêm mới' }}
+            {{ isEdit ? $t('lessonForm.buttons.update') : $t('lessonForm.buttons.add') }}
           </el-button>
-          <el-button @click="handleReset">Làm mới</el-button>
-          <el-button @click="handleBack">Hủy</el-button>
+          <el-button @click="handleReset">{{ $t('lessonForm.buttons.reset') }}</el-button>
+          <el-button @click="handleBack">{{ $t('lessonForm.buttons.cancel') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
   </div>
 </template>
+
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'

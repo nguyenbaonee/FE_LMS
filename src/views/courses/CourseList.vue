@@ -1,116 +1,110 @@
 <template>
   <div class="page-container">
+    <!-- Header -->
     <el-card shadow="never" class="page-header">
       <div class="header-content">
         <div class="header-left">
-          <h2 class="page-title">Quản lý khóa học</h2>
+          <h2 class="page-title">{{ $t('course.header.title') }}</h2>
         </div>
         <div class="header-right">
           <el-button type="success" :icon="Download" @click="handleExport">
-            Xuất Excel
+            {{ $t('course.header.export') }}
           </el-button>
           <el-button type="success" :icon="Download" @click="handleExportAll">
-            Xuất tất cả
+            {{ $t('course.header.exportAll') }}
           </el-button>
           <el-button type="primary" :icon="Plus" @click="handleCreate">
-            Thêm khóa học
+            {{ $t('course.header.add') }}
           </el-button>
         </div>
       </div>
     </el-card>
 
+    <!-- Filter Form -->
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="searchForm" class="filter-form">
-        <!-- Ô 1: Name -->
-        <el-form-item label="Tên khóa học">
+        <el-form-item :label="$t('course.filter.name')">
           <el-input
               v-model="searchForm.name"
-              placeholder="Nhập tên khóa học"
+              :placeholder="$t('course.filter.namePlaceholder')"
               clearable
               style="width: 200px"
           />
         </el-form-item>
 
-        <!-- Ô 2: Code -->
-        <el-form-item label="Mã khóa học">
+        <el-form-item :label="$t('course.filter.code')">
           <el-input
               v-model="searchForm.code"
-              placeholder="Nhập mã khóa học"
+              :placeholder="$t('course.filter.codePlaceholder')"
               clearable
               style="width: 150px"
           />
         </el-form-item>
-        <el-form-item label="Trạng thái">
-          <el-select v-model="searchForm.status" placeholder="Đang hoạt động" clearable style="width: 150px">
-            <el-option label="Đang hoạt động" value="ACTIVE" />
-            <el-option label="Đã xóa" value="DELETED" />
+
+        <el-form-item :label="$t('course.filter.status')">
+          <el-select v-model="searchForm.status" :placeholder="$t('course.filter.statusPlaceholder')" clearable style="width: 150px">
+            <el-option :label="$t('course.status.active')" value="ACTIVE" />
+            <el-option :label="$t('course.status.deleted')" value="DELETED" />
           </el-select>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">Tìm kiếm</el-button>
+          <el-button type="primary" :icon="Search" @click="handleSearch">
+            {{ $t('course.filter.search') }}
+          </el-button>
         </el-form-item>
 
-        <!-- Ô 5: Reset -->
         <el-form-item>
-          <el-button :icon="Refresh" @click="handleReset">Reset</el-button>
+          <el-button :icon="Refresh" @click="handleReset">
+            {{ $t('course.filter.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-
-
+    <!-- Table -->
     <el-card shadow="never">
       <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column type="index" label="STT" width="60" align="center" />
+        <el-table-column type="index" :label="$t('course.table.index')" width="60" align="center" />
 
-        <el-table-column label="Thumbnail" width="120" align="center">
+        <el-table-column :label="$t('course.table.thumbnail')" width="120" align="center">
           <template #default="{ row }">
             <el-image
                 :src="getPrimaryThumbnailUrl(row)"
-            :preview-src-list="row.thumbnail?.map(t => 'http://localhost:8080' + encodeURI(t.url)) || []"
-            fit="cover"
-            style="width: 80px; height: 50px; border-radius: 4px"
+                :preview-src-list="row.thumbnail?.map(t => 'http://localhost:8080' + encodeURI(t.url)) || []"
+                fit="cover"
+                style="width: 80px; height: 50px; border-radius: 4px"
             />
           </template>
         </el-table-column>
 
-        <el-table-column prop="name" label="Tên khóa học" min-width="150" />
+        <el-table-column prop="name" :label="$t('course.table.name')" min-width="150" />
+        <el-table-column prop="code" :label="$t('course.table.code')" width="120" align="right" />
+        <el-table-column prop="description" :label="$t('course.table.description')" width="200" align="right" />
 
-        <el-table-column label="Mã khóa học" width="120" align="right">
-          <template #default="{ row }">
-            {{ row.code }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Mô tả" width="200" align="right">
-          <template #default="{ row }">
-            {{ row.description }}
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Quản Lý Bài Giảng" width="100" align="center">
+        <el-table-column :label="$t('course.table.lessons')" width="100" align="center">
           <template #default="{ row }">
             <el-link type="primary" @click="viewLessons(row)">
-              Xem Bài giảng
+              {{ $t('course.table.viewLessons') }}
             </el-link>
           </template>
         </el-table-column>
 
-        <el-table-column label="Trạng thái" width="120" align="center">
+        <el-table-column :label="$t('course.table.status')" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'">
-              {{ row.status === 'ACTIVE' ? 'Hoạt động' : 'Đã xóa' }}
+              {{ row.status === 'ACTIVE' ? $t('course.status.active') : $t('course.status.deleted') }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column label="Thao tác" width="220" align="center" fixed="right">
+        <el-table-column :label="$t('course.table.actions')" width="220" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="info" size="small" link @click="viewStudents(row)">
-              Xem Học viên
+              {{ $t('course.table.viewStudents') }}
             </el-button>
             <el-button type="warning" size="small" :icon="Edit" link @click="handleEdit(row)">
-              Sửa
+              {{ $t('course.table.edit') }}
             </el-button>
             <el-button
                 v-if="row.status === 'ACTIVE'"
@@ -120,7 +114,7 @@
                 link
                 @click="handleDelete(row)"
             >
-              Xóa
+              {{ $t('course.table.delete') }}
             </el-button>
           </template>
         </el-table-column>
@@ -138,6 +132,7 @@
     </el-card>
   </div>
 </template>
+
 <script setup>
 import { reactive, computed, onMounted, watch } from 'vue'
 import { useCourseStore } from '../../stores/courseStore.js'

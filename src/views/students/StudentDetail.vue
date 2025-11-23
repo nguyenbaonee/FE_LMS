@@ -3,8 +3,8 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <h3>Chi tiết học viên</h3>
-          <el-button type="primary" @click="handleBack">Quay lại</el-button>
+          <h3>{{ $t('studentDetail.title') }}</h3>
+          <el-button type="primary" @click="handleBack">{{ $t('studentDetail.back') }}</el-button>
         </div>
       </template>
 
@@ -21,7 +21,7 @@
               v-if="student.avatar?.filter(a => !a.primary).length > 0"
               style="margin-top: 20px;"
           >
-            <h4>Avatar khác:</h4>
+            <h4>{{ $t('studentDetail.otherAvatars') }}</h4>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <el-image
                   v-for="item in student.avatar?.filter(a => !a.primary)"
@@ -38,15 +38,15 @@
         <!-- Info -->
         <el-col :span="18">
           <el-descriptions column="1" border>
-            <el-descriptions-item label="Họ tên">
+            <el-descriptions-item :label="$t('studentDetail.fullName')">
               {{ student.name }}
             </el-descriptions-item>
-            <el-descriptions-item label="Email">
+            <el-descriptions-item :label="$t('studentDetail.email')">
               {{ student.email }}
             </el-descriptions-item>
-            <el-descriptions-item label="Trạng thái">
+            <el-descriptions-item :label="$t('studentDetail.status')">
               <el-tag :type="student.status === 'ACTIVE' ? 'success' : 'danger'">
-                {{ student.status === 'ACTIVE' ? 'Hoạt động' : 'Đã xóa' }}
+                {{ student.status === 'ACTIVE' ? $t('studentDetail.active') : $t('studentDetail.deleted') }}
               </el-tag>
             </el-descriptions-item>
           </el-descriptions>

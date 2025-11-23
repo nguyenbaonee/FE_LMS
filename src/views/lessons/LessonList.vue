@@ -4,33 +4,32 @@
     <el-card shadow="never" class="page-header" style="padding: 20px;">
       <div class="header-content" style="display: flex; justify-content: space-between; align-items: center;">
         <div class="header-left">
-          <h2 class="page-title">Quản lý bài học</h2>
+          <h2 class="page-title">{{ $t('lesson.header.title') }}</h2>
           <el-tag v-if="courseName" type="warning">
             {{ courseName }}
           </el-tag>
-          <el-tag type="info">Tổng: {{ total }} bài học</el-tag>
+          <el-tag type="info">{{ $t('lesson.header.total') }}: {{ total }} {{ $t('lesson.header.lesson') }}</el-tag>
         </div>
 
         <div class="header-right" style="display: flex; gap: 10px; align-items: center;">
           <el-button type="primary" :icon="Plus" @click="handleCreate">
-            Thêm bài học
+            {{ $t('lesson.header.addLesson') }}
           </el-button>
 
           <!-- Dropdown trạng thái bo tròn -->
           <el-select
               v-model="searchForm.status"
-              placeholder="Đang hoạt động"
+              :placeholder="$t('lesson.header.statusPlaceholder')"
               clearable
               style="width: 150px; border-radius: 8px; height: 36px;"
               @change="onStatusChange"
           >
-            <el-option label="Đang hoạt động" value="ACTIVE" />
-            <el-option label="Đã xóa" value="DELETED" />
+            <el-option :label="$t('lesson.status.active')" value="ACTIVE" />
+            <el-option :label="$t('lesson.status.deleted')" value="DELETED" />
           </el-select>
         </div>
       </div>
     </el-card>
-
 
     <!-- Table -->
     <el-card shadow="never">
@@ -40,10 +39,10 @@
           :row-key="row => row.id"
           stripe
       >
-        <el-table-column type="index" label="STT" width="60" align="center" />
+        <el-table-column type="index" :label="$t('lesson.table.index')" width="60" align="center" />
 
         <!-- Thumbnail -->
-        <el-table-column label="Thumbnail" width="120" align="center">
+        <el-table-column :label="$t('lesson.table.thumbnail')" width="120" align="center">
           <template #default="{ row }">
             <el-image
                 :src="getThumbnail(row.thumbnails)"
@@ -54,16 +53,15 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="title" label="Tiêu đề" min-width="200" />
-        <el-table-column label="Khóa học" width="200">
+        <el-table-column prop="title" :label="$t('lesson.table.title')" min-width="200" />
+        <el-table-column :label="$t('lesson.table.course')" width="200">
           <template #default="{ row }">
             {{ courseName }}
           </template>
         </el-table-column>
 
-
         <!-- Video -->
-        <el-table-column label="Video" width="100" align="center">
+        <el-table-column :label="$t('lesson.table.video')" width="100" align="center">
           <template #default="{ row }">
             <el-button
                 v-if="getVideo(row.thumbnails)"
@@ -73,29 +71,29 @@
                 @click="previewVideo(row)"
             >
               <el-icon><VideoPlay /></el-icon>
-              Xem
+              {{ $t('lesson.table.view') }}
             </el-button>
-            <el-text v-else type="info">Chưa có</el-text>
+            <el-text v-else type="info">{{ $t('lesson.table.noVideo') }}</el-text>
           </template>
         </el-table-column>
 
         <!-- Status -->
-        <el-table-column label="Trạng thái" width="120" align="center">
+        <el-table-column :label="$t('lesson.table.status')" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'">
-              {{ row.status === 'ACTIVE' ? 'Hoạt động' : 'Đã xóa' }}
+              {{ row.status === 'ACTIVE' ? $t('lesson.status.active') : $t('lesson.status.deleted') }}
             </el-tag>
           </template>
         </el-table-column>
 
         <!-- Actions -->
-        <el-table-column label="Thao tác" width="200" align="center" fixed="right">
+        <el-table-column :label="$t('lesson.table.actions')" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" :icon="View" link @click="handleView(row)">
-              Xem
+              {{ $t('lesson.table.view') }}
             </el-button>
             <el-button type="warning" size="small" :icon="Edit" link @click="handleEdit(row)">
-              Sửa
+              {{ $t('lesson.table.edit') }}
             </el-button>
             <el-button
                 v-if="row.status === 'ACTIVE'"
@@ -105,7 +103,7 @@
                 link
                 @click="handleDelete(row)"
             >
-              Xóa
+              {{ $t('lesson.table.delete') }}
             </el-button>
           </template>
         </el-table-column>
@@ -126,7 +124,7 @@
     </el-card>
 
     <!-- Video Preview Dialog -->
-    <el-dialog v-model="videoDialogVisible" title="Xem video" width="70%">
+    <el-dialog v-model="videoDialogVisible" :title="$t('lesson.videoDialog.title')" width="70%">
       <video
           v-if="currentVideo"
           :src="currentVideo"

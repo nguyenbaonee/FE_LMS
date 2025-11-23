@@ -4,25 +4,25 @@
     <el-card shadow="never" class="page-header">
       <div class="header-content">
         <div class="header-left">
-          <h2 class="page-title">Quản lý học viên</h2>
+          <h2 class="page-title">{{ $t('studentManagement.title') }}</h2>
           <el-tag v-if="isByCourse" type="warning" class="tag-large">
-            Theo khóa học: {{ route.query.courseName || 'Không rõ' }}
+            {{ $t('studentManagement.byCourse') }}: {{ route.query.courseName || $t('studentManagement.unknown') }}
           </el-tag>
 
           <el-tag type="info" class="tag-large">
-            Tổng: {{ total }} học viên
+            {{ $t('studentManagement.total') }}: {{ total }} {{ $t('studentManagement.students') }}
           </el-tag>
         </div>
 
         <div class="header-right">
           <el-button type="success" :icon="Download" @click="handleExport">
-            Xuất theo tìm kiếm
+            {{ $t('studentManagement.exportSearch') }}
           </el-button>
           <el-button v-if="!isByCourse" type="success" :icon="Download" @click="handleExportAll">
-            Xuất tất cả
+            {{ $t('studentManagement.exportAll') }}
           </el-button>
           <el-button type="primary" :icon="Plus" @click="handleCreate">
-            Thêm học viên
+            {{ $t('studentManagement.addStudent') }}
           </el-button>
         </div>
       </div>
@@ -31,10 +31,10 @@
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="searchForm">
 
-        <el-form-item label="Tên">
+        <el-form-item :label="$t('studentFilter.name')">
           <el-input
               v-model="searchForm.name"
-              placeholder="Nhập tên"
+              :placeholder="$t('studentFilter.enterName')"
               :prefix-icon="Search"
               clearable
               style="width: 200px"
@@ -43,10 +43,10 @@
           />
         </el-form-item>
 
-        <el-form-item label="Email">
+        <el-form-item :label="$t('studentFilter.email')">
           <el-input
               v-model="searchForm.email"
-              placeholder="Nhập email"
+              :placeholder="$t('studentFilter.enterEmail')"
               :prefix-icon="Search"
               clearable
               style="width: 200px"
@@ -55,27 +55,30 @@
           />
         </el-form-item>
 
-        <el-form-item label="Trạng thái">
+        <el-form-item :label="$t('studentFilter.status')">
           <el-select
               v-model="searchForm.status"
-              placeholder="Đang hoạt động"
+              :placeholder="$t('studentFilter.active')"
               clearable
               style="width: 150px"
           >
-            <el-option label="Đang hoạt động" :value="1" />
-            <el-option label="Đã xóa" :value="0" />
+            <el-option :label="$t('studentFilter.active')" :value="1" />
+            <el-option :label="$t('studentFilter.deleted')" :value="0" />
           </el-select>
         </el-form-item>
 
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="handleSearch">
-            Tìm kiếm
+            {{ $t('studentFilter.search') }}
           </el-button>
-          <el-button :icon="Refresh" @click="handleReset">Reset</el-button>
+          <el-button :icon="Refresh" @click="handleReset">
+            {{ $t('studentFilter.reset') }}
+          </el-button>
         </el-form-item>
 
       </el-form>
     </el-card>
+
 
 
     <el-card shadow="never">
@@ -85,30 +88,28 @@
           stripe
           style="width: 100%"
       >
-        <el-table-column type="index" label="STT" width="60" align="center" />
+        <el-table-column type="index" :label="$t('studentTable.index')" width="60" align="center" />
 
-        <el-table-column label="Avatar" width="80" align="center">
+        <el-table-column :label="$t('studentTable.avatar')" width="80" align="center">
           <template #default="{ row }">
             <el-avatar :src="getAvatarUrl(row)" :size="50">
               {{ row.name.charAt(0) }}
             </el-avatar>
-
           </template>
         </el-table-column>
 
-        <el-table-column prop="name" label="Họ tên" min-width="150" />
+        <el-table-column prop="name" :label="$t('studentTable.fullName')" min-width="150" />
+        <el-table-column prop="email" :label="$t('studentTable.email')" min-width="180" />
 
-        <el-table-column prop="email" label="Email" min-width="180" />
-
-        <el-table-column label="Trạng thái" width="120" align="center">
+        <el-table-column :label="$t('studentTable.status')" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="(row.status === 1 || row.status === 'ACTIVE') ? 'success' : 'danger'">
-              {{ (row.status === 1||row.status === "ACTIVE") ? 'Hoạt động' : 'Đã xóa' }}
+              {{ (row.status === 1 || row.status === 'ACTIVE') ? $t('studentTable.active') : $t('studentTable.deleted') }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column label="Thao tác" width="200" align="center" fixed="right">
+        <el-table-column :label="$t('studentTable.actions')" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
                 type="primary"
@@ -117,7 +118,7 @@
                 link
                 @click="handleView(row)"
             >
-              Xem
+              {{ $t('studentTable.view') }}
             </el-button>
             <el-button
                 type="warning"
@@ -126,7 +127,7 @@
                 link
                 @click="handleEdit(row)"
             >
-              Sửa
+              {{ $t('studentTable.edit') }}
             </el-button>
             <el-button
                 v-if="row.status === 'ACTIVE'"
@@ -136,7 +137,7 @@
                 link
                 @click="handleDelete(row)"
             >
-              Xóa
+              {{ $t('studentTable.delete') }}
             </el-button>
           </template>
         </el-table-column>
@@ -154,7 +155,6 @@
             @size-change="handleSizeChange"
         >
         </el-pagination>
-
       </div>
     </el-card>
   </div>

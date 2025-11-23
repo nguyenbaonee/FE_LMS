@@ -3,8 +3,8 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <h3>{{ isEdit ? 'Cập nhật' : 'Thêm' }} học viên</h3>
-          <el-button :icon="Back" @click="handleBack">Quay lại</el-button>
+          <h3>{{ isEdit ? $t('studentForm.update') : $t('studentForm.add') }} {{ $t('studentForm.student') }}</h3>
+          <el-button :icon="Back" @click="handleBack">{{ $t('studentForm.back') }}</el-button>
         </div>
       </template>
 
@@ -15,43 +15,43 @@
           label-width="180px"
           label-position="left"
       >
-        <!--hiển thị khi Edit-->
-        <el-form-item v-if="isEdit && existingAvatars.length > 0" label="Avatar hiện có">
+        <!-- Hiển thị khi Edit -->
+        <el-form-item v-if="isEdit && existingAvatars.length > 0" :label="$t('studentForm.currentAvatars')">
           <div class="existing-avatars-container">
             <el-table :data="existingAvatars" border style="width: 100%">
-              <el-table-column label="Ảnh" width="100" align="center">
+              <el-table-column :label="$t('studentForm.image')" width="100" align="center">
                 <template #default="{ row }">
                   <el-avatar :src="'http://localhost:8080' + encodeURI(row.url)" :size="60" />
                 </template>
               </el-table-column>
 
-              <el-table-column label="Trạng thái" width="150" align="center">
+              <el-table-column :label="$t('studentForm.status')" width="150" align="center">
                 <template #default="{ row }">
                   <el-tag v-if="row.primary === true" type="success" effect="dark">
-                    Avatar chính
+                    {{ $t('studentForm.primaryAvatar') }}
                   </el-tag>
-                  <el-tag v-else type="info">Avatar phụ</el-tag>
+                  <el-tag v-else type="info">{{ $t('studentForm.secondaryAvatar') }}</el-tag>
                 </template>
               </el-table-column>
 
-              <el-table-column label="Đặt làm avatar chính" width="180" align="center">
+              <el-table-column :label="$t('studentForm.setPrimaryAvatar')" width="180" align="center">
                 <template #default="{ row }">
                   <el-radio
                       v-model="mainAvatarId"
                       :label="row.id"
                       @change="handleMainAvatarChange(row.id)"
                   >
-                    Chọn
+                    {{ $t('studentForm.select') }}
                   </el-radio>
                 </template>
               </el-table-column>
 
-              <el-table-column label="Hành động" width="120" align="center">
+              <el-table-column :label="$t('studentForm.actions')" width="120" align="center">
                 <template #default="{ row }">
                   <el-popconfirm
-                      title="Bạn có chắc muốn xóa avatar này?"
-                      confirm-button-text="Xóa"
-                      cancel-button-text="Hủy"
+                      :title="$t('studentForm.confirmDeleteAvatar')"
+                      :confirm-button-text="$t('studentForm.delete')"
+                      :cancel-button-text="$t('studentForm.cancel')"
                       @confirm="removeExistingAvatar(row)"
                   >
                     <template #reference>
@@ -60,7 +60,7 @@
                           size="small"
                           :disabled="row.primary === true || existingAvatars.length === 1"
                       >
-                        Xóa
+                        {{ $t('studentForm.delete') }}
                       </el-button>
                     </template>
                   </el-popconfirm>
@@ -70,7 +70,7 @@
           </div>
         </el-form-item>
 
-        <el-form-item :label="isEdit ? 'Thêm avatar mới' : 'Avatar'" prop="avatars">
+        <el-form-item :label="isEdit ? $t('studentForm.addNewAvatar') : $t('studentForm.avatar')" prop="avatars">
           <div class="avatar-upload-container">
             <el-upload
                 v-model:file-list="newAvatars"
@@ -85,26 +85,24 @@
                 <Plus />
               </el-icon>
             </el-upload>
-            <div class="upload-tip">
-              Cho phép: JPG, PNG. Tối đa 2MB/ảnh. Không giới hạn số lượng
-            </div>
+            <div class="upload-tip">{{ $t('studentForm.avatarUploadTip') }}</div>
           </div>
         </el-form-item>
 
-        <el-form-item label="Họ tên" prop="name" required>
+        <el-form-item :label="$t('studentForm.fullName')" prop="name" required>
           <el-input
               v-model="formData.name"
-              placeholder="Nhập họ tên (5-20 ký tự)"
+              :placeholder="$t('studentForm.namePlaceholder')"
               maxlength="20"
               show-word-limit
               clearable
           />
         </el-form-item>
 
-        <el-form-item label="Email" prop="email" required>
+        <el-form-item :label="$t('studentForm.email')" prop="email" required>
           <el-input
               v-model="formData.email"
-              :placeholder="isEdit ? 'Email không được đổi' : 'Nhập email (5-100 ký tự)'"
+              :placeholder="isEdit ? $t('studentForm.emailNoChange') : $t('studentForm.emailPlaceholder')"
               maxlength="100"
               show-word-limit
               :disabled="isEdit"
@@ -114,10 +112,10 @@
 
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">
-            {{ isEdit ? 'Cập nhật' : 'Thêm mới' }}
+            {{ isEdit ? $t('studentForm.update') : $t('studentForm.addNew') }}
           </el-button>
-          <el-button @click="handleReset">Làm mới</el-button>
-          <el-button @click="handleBack">Hủy</el-button>
+          <el-button @click="handleReset">{{ $t('studentForm.reset') }}</el-button>
+          <el-button @click="handleBack">{{ $t('studentForm.cancel') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
